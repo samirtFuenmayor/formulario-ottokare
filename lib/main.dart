@@ -1,4 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'repository/form_repository.dart';
+import 'bloc/form_bloc.dart';
+import 'ui/form_page.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  final FormRepository repository = FormRepository();
+
+  MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false, // Para que se vea más limpio
+      title: 'Formulario Registro Mascota',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+        useMaterial3: true, // Diseño más moderno
+      ),
+      home: BlocProvider(
+        create: (_) => FormBloc(repository),
+        child: const FormPage(),
+      ),
+    );
+  }
+}
+
+
+
+
+
+/*
+
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +66,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -109,6 +147,12 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            Text(
+              "HolaMundo ", 
+              style: TextStyle( 
+                color: Colors.red
+              ),
+            ),
           ],
         ),
       ),
@@ -120,3 +164,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+*/
