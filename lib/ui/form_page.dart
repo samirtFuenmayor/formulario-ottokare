@@ -1,11 +1,16 @@
+// lib/pages/form_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/form_bloc.dart';
 import '../bloc/form_event.dart';
 import '../bloc/form_blocstate.dart';
-import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:convert'; // Para json.encode
+import 'package:http/http.dart' as http; // Para http.post
+import '../repository/form_repository.dart';
+import 'package:flutter/services.dart'; // Para FilteringTextInputFormatter
 
 
 class FormPage extends StatefulWidget {
@@ -16,1678 +21,1448 @@ class FormPage extends StatefulWidget {
 }
 
 class _FormPageState extends State<FormPage> {
-  final _pageController = PageController();
-  final _formKeyOwner = GlobalKey<FormState>();
-  final _formKeyPet = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-  // Dueño
-  final TextEditingController _ownerName = TextEditingController();
-  final TextEditingController _ownerId = TextEditingController();
-  final TextEditingController _ownerPhone = TextEditingController();
-  final TextEditingController _ownerAddress = TextEditingController();
-  final TextEditingController _ownerEmail = TextEditingController();
-  bool _acceptTerms = false;
+  // Controllers
+  final TextEditingController _ownerNameCtrl = TextEditingController();
+  final TextEditingController _ownerLastNameCtrl = TextEditingController();
 
-  // Mascota
-  final TextEditingController _petName = TextEditingController();
-  String? _petGender;
-  String? _petBreed;
-  final TextEditingController _petAge = TextEditingController();
-  final TextEditingController _petCard = TextEditingController();
-  File? _petFile;
-  List<Map<String, dynamic>> _pets = [];
+  final TextEditingController _idCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _cityCtrl = TextEditingController();
+  final FormRepository _formRepository = FormRepository();
+
+  final TextEditingController _petNameCtrl = TextEditingController();
+  final TextEditingController _petGenderCtrl = TextEditingController();
+  final TextEditingController _petBreedCtrl = TextEditingController();
+  final TextEditingController _petSpeciesCtrl = TextEditingController();
+  final TextEditingController _petColorCtrl = TextEditingController();
+  final TextEditingController _petCarnetCtrl = TextEditingController();
+
+  // Age fields
+  final TextEditingController _ageDayCtrl = TextEditingController();
+  final TextEditingController _ageMonthCtrl = TextEditingController();
+  final TextEditingController _ageYearCtrl = TextEditingController();
+  DateTime? _selectedBirthDate; // Nueva variable
+  // Generar controladores y variables
+  final TextEditingController _birthDateCtrl = TextEditingController();
+  String? _selectedGender;
+  String? _selectedSpecies;
+  String? _selectedBreed;
+
+  // Lista para guardar mascotas temporalmente
+  List<Map<String, String>> _mascotas = [];
+
+
+  final List<String> _genders = ['Hembra', 'Macho'];
+  final List<String> _species = ['Perro', 'Gato'];
+  final Map<String, List<String>> _breeds = {
+    'Perro': ['Labrador', 'Bulldog', 'Pastor Alemán', 'Poodle', 'Chihuahua'],
+    'Gato': ['Persa', 'Siames', 'Bengala', 'Maine Coon', 'Sphynx']
+  };
+
+  File? _photoFile;
+  bool _acceptData = false;
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _ownerName.dispose();
-    _ownerId.dispose();
-    _ownerPhone.dispose();
-    _ownerAddress.dispose();
-    _ownerEmail.dispose();
-    _petName.dispose();
-    _petAge.dispose();
-    _petCard.dispose();
+    _ownerNameCtrl.dispose();
+    _ownerLastNameCtrl.dispose();
+    _idCtrl.dispose();
+    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
+    _cityCtrl.dispose();
+
+    _petNameCtrl.dispose();
+    _petGenderCtrl.dispose();
+    _petBreedCtrl.dispose();
+    _petSpeciesCtrl.dispose();
+    _petColorCtrl.dispose();
+    _petCarnetCtrl.dispose();
+
+    _ageDayCtrl.dispose();
+    _ageMonthCtrl.dispose();
+    _ageYearCtrl.dispose();
+
     super.dispose();
   }
 
-  void _showTermsModal() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Términos y Condiciones"),
-        content: const Text(
-            "Aquí se muestran los términos y condiciones del servicio."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _acceptTerms = true;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Aceptar"),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
       setState(() {
-        _petFile = File(result.files.single.path!);
+        _photoFile = File(result.files.single.path!);
       });
     }
+
   }
 
-  void _addPet() {
-    if (_formKeyPet.currentState!.validate() &&
-        _petGender != null &&
-        _petBreed != null) {
-      setState(() {
-        _pets.add({
-          'nombre': _petName.text,
-          'genero': _petGender,
-          'raza': _petBreed,
-        });
-        _petName.clear();
-        _petGender = null;
-        _petBreed = null;
-        _petAge.clear();
-        _petCard.clear();
-        _petFile = null;
-      });
-    } else {
+
+  InputDecoration _fieldDecoration(String hint) =>
+      InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: const Color(0xFFF6FBFB),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide(color: Colors.transparent),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide(color: Colors.blueAccent),
+        ),
+        contentPadding:
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      );
+
+// Función para construir JSON
+  Map<String, dynamic> buildRequestJson() {
+    return {
+      "first_name": _ownerNameCtrl.text
+          .split(' ')
+          .first,
+      "last_name": _ownerLastNameCtrl.text.split(' ').skip(1).join(' '),
+      "identification": _idCtrl.text,
+      "phone_number": _phoneCtrl.text,
+      "email": _emailCtrl.text,
+      "address": {
+        "home_address": _cityCtrl.text,
+        "postal_code": "1122", // si quieres dinámico, reemplazar
+      },
+      "pets": _mascotas.map((pet) {
+        return {
+          "first_name": pet['nombre'],
+          "gender": {
+            "gender": pet['gender'] ?? _selectedGender
+          },
+          "client_type": {
+            "name": pet['species'] ?? _selectedSpecies,
+            "breed": {"name": pet['raza'] ?? ""},
+            "color": pet['color'] ?? _petColorCtrl.text,
+            "physical_defect": pet['defect'] ?? ""
+          },
+          "birth_date": pet['birth_date'] != null &&
+              pet['birth_date'] is DateTime
+              ? (pet['birth_date'] as DateTime).toIso8601String()
+              : null, // ISO completo: 2020-12-31T00:00:00
+          "identification": pet['carnet'] ?? _petCarnetCtrl.text
+        };
+      }).toList(),
+    };
+  }
+
+  // Función para enviar datos
+  Future<void> sendForm() async {
+    final url = Uri.parse('TU_ENDPOINT_AQUI');
+
+    final jsonData = buildRequestJson();
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode(jsonData),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Datos enviados correctamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${response.body}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Complete todos los campos')),
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
-  void _registerPets() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Datos enviados'),
-        content: const Text('El registro de mascotas se ha completado.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _pageController.animateToPage(0,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut);
-              setState(() {
-                _pets.clear();
-              });
-            },
-            child: const Text('Aceptar'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.grey),
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.grey, width: 1)),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.grey, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-    );
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool isPassword = false, IconData? icon}) {
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword,
-      validator: (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null,
-      style: const TextStyle(fontSize: 14, color: Colors.black87),
-      decoration: _inputDecoration(label, icon ?? Icons.text_fields),
-    );
-  }
-
-  Widget _buildDropdownField(String label, String? value, List<String> items,
-      ValueChanged<String?> onChanged, IconData icon) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      validator: (v) => v == null ? 'Seleccione una opción' : null,
-      decoration: _inputDecoration(label, icon),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _styledButton(String text, VoidCallback onPressed,
-      {IconData? icon, Color? color}) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton.icon(
-        icon: icon != null ? Icon(icon, color: Colors.white) : const SizedBox(),
-        label: Text(
-          text,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+  Widget buildMascotasDialog(BuildContext context, double width) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
         ),
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color ?? Colors.blueAccent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          elevation: 4,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Mascotas Registradas',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: const [
+                  DataColumn(label: Text('Nombre')),
+                  DataColumn(label: Text('Raza')),
+                  DataColumn(label: Text('Acciones')),
+                ],
+                rows: _mascotas
+                    .map(
+                      (m) =>
+                      DataRow(cells: [
+                        DataCell(Text(m['nombre']!)),
+                        DataCell(Text(m['raza']!)),
+                        DataCell(
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                _mascotas.remove(m);
+                              });
+                              // cerrar y reabrir modal para refrescar DataTable
+                              Navigator.of(context).pop();
+                              Future.delayed(Duration.zero, () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) =>
+                                      buildMascotasDialog(context, width),
+                                );
+                              });
+                            },
+                          ),
+                        ),
+                      ]),
+                )
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () async {
+                    // Validaciones antes de cerrar el modal
+                    if (!_acceptData) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes aceptar los términos y condiciones'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (_formKey.currentState?.validate() != true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Completa todos los campos obligatorios'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (_mascotas.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes agregar al menos una mascota'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Cerrar el modal
+                    Navigator.of(context).pop();
+
+                    // Mostrar indicador de carga
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+
+                    try {
+                      // Enviar datos al backend
+                      final mensaje = await _formRepository.enviarDatos(
+                        nombre: _ownerNameCtrl.text,
+                        apellido: _ownerLastNameCtrl.text,
+                        cedula: _idCtrl.text,
+                        celular: _phoneCtrl.text,
+                        email: _emailCtrl.text,
+                        ciudad: _cityCtrl.text,
+                        mascotas: _mascotas,
+                      );
+
+                      // Cerrar indicador de carga
+                      Navigator.of(context).pop();
+
+                      // Mostrar mensaje de éxito
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(mensaje),
+                          backgroundColor: Colors.green,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+
+                      // Limpiar formulario
+                      _limpiarFormularios();
+
+                    } catch (e) {
+                      // Cerrar indicador de carga en caso de error
+                      Navigator.of(context).pop();
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al enviar: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF074B5E),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Guardar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),          ],
         ),
       ),
     );
+  }
+  void _limpiarFormularios() {
+    setState(() {
+      _formKey.currentState?.reset();
+      _mascotas.clear();
+      _ownerNameCtrl.clear();
+      _ownerLastNameCtrl.clear();
+      _idCtrl.clear();
+      _phoneCtrl.clear();
+      _emailCtrl.clear();
+      _cityCtrl.clear();
+      _petNameCtrl.clear();
+      _selectedSpecies = null;
+      _selectedBreed = null;
+      _birthDateCtrl.clear();
+      _petColorCtrl.clear();
+      _petCarnetCtrl.clear();
+      _photoFile = null;
+      _acceptData = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Fondo completo
-          Image.network(
-            'https://c.files.bbci.co.uk/48DD/production/_107435681_perro1.jpg',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-          ),
-          Container(color: Colors.black.withOpacity(0.5)),
-          Center(
-            child: Container(
-              width: 1100,
-              height: 700,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 25,
-                    spreadRadius: 3,
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Panel izquierdo con imagen adaptativa
-                  Expanded(
-                    flex: 4,
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        bottomLeft: Radius.circular(12),
-                      ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Image.network(
-                            'https://c.files.bbci.co.uk/48DD/production/_107435681_perro1.jpg',
-                            width: constraints.maxWidth,
-                            height: constraints.maxHeight,
-                            fit: BoxFit.cover, // Esto hace que se adapte
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  // Panel derecho - formulario
-                  Expanded(
-                    flex: 7,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-                      child: PageView(
-                        controller: _pageController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          // Página 1 - Dueño
-                          Center(
-                            child: SingleChildScrollView(
-                              child: Form(
-                                key: _formKeyOwner,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 40),
-                                    const Text('Dueño de Mascota',
-                                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 20),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                            child: _buildTextField('Nombre', _ownerName, icon: Icons.person)),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                            child: _buildTextField('Cédula', _ownerId, icon: Icons.credit_card)),
-                                      ],
+    const Color headerBlue = Color(0xFF0A5970); // Azul oscuro original
+    const Color backgroundTurquoise = Color(0xFF08AFC0);
+    //const Color headerBlue = Color(0xFF0A5970);
+    final isMobile = MediaQuery
+        .of(context)
+        .size
+        .width < 800;
+
+    return BlocProvider<FormBloc>(
+      create: (_) => FormBloc(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 1150),
+                margin: const EdgeInsets.symmetric(
+                    vertical: 24, horizontal: 12),
+                child: LayoutBuilder(builder: (context, constraints) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Columna izquierda (formulario)
+                            Expanded(
+                              flex: 6,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
                                     ),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                            child: _buildTextField('Teléfono', _ownerPhone, icon: Icons.phone)),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                            child: _buildTextField('Correo electrónico', _ownerEmail, icon: Icons.email)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildTextField('Dirección', _ownerAddress, icon: Icons.home),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        Checkbox(
-                                          value: _acceptTerms,
-                                          onChanged: (value) {
-                                            if (value == true && !_acceptTerms) {
-                                              _showTermsModal();
-                                            }
-                                          },
-                                          activeColor: Colors.blueAccent,
-                                        ),
-                                        const Text('Aceptar Términos y Condiciones', style: TextStyle(fontSize: 13)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 24),
-                                    _styledButton('Siguiente', () {
-                                      if (_acceptTerms && _formKeyOwner.currentState!.validate()) {
-                                        _pageController.animateToPage(1,
-                                            duration: const Duration(milliseconds: 500),
-                                            curve: Curves.easeInOut);
-                                      }
-                                    }, icon: Icons.arrow_forward),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ),
-                          // Página 2 - Mascota
-                          Center(
-                            child: SingleChildScrollView(
-                              child: Form(
-                                key: _formKeyPet,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 40),
-                                    const Text('Registro Mascota',
-                                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 20),
-                                    Row(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Form(
+                                    key: _formKey,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment
+                                          .start,
                                       children: [
-                                        Expanded(
-                                            child: _buildTextField('Nombre Mascota', _petName, icon: Icons.pets)),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                            child: _buildDropdownField('Género', _petGender,
-                                                ['Macho', 'Hembra'], (v) => setState(() => _petGender = v), Icons.wc)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                            child: _buildDropdownField('Raza', _petBreed,
-                                                ['Perro', 'Gato', 'Ave'], (v) => setState(() => _petBreed = v), Icons.category)),
-                                        const SizedBox(width: 16),
-                                        Expanded(child: _buildTextField('Edad', _petAge, icon: Icons.cake)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Row(
-                                      children: [
-                                        Expanded(child: _buildTextField('Carnet', _petCard, icon: Icons.badge)),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _styledButton('Subir Archivo', _pickFile,
-                                              icon: Icons.upload_file, color: Colors.amber),
+                                        // Header
+                                        // Header
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isMobile ? 12 : 18,
+                                            vertical: 16,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: headerBlue,
+                                            borderRadius: const BorderRadius
+                                                .vertical(
+                                                top: Radius.circular(12)),
+                                          ),
+                                          child: isMobile
+                                              ? Column(
+                                            crossAxisAlignment: CrossAxisAlignment
+                                                .start,
+                                            children: [
+                                              Row(
+                                                children: [
+
+                                                  const SizedBox(width: 10),
+                                                  const Text(
+                                                    'Asistencia Veterinaria',
+                                                    style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight
+                                                            .w600),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment
+                                                    .spaceAround,
+                                                children: const [
+                                                  Icon(Icons.medical_services,
+                                                      color: Colors.white,
+                                                      size: 20),
+                                                  Icon(Icons.local_hospital,
+                                                      color: Colors.white,
+                                                      size: 20),
+                                                  Icon(Icons.pets,
+                                                      color: Colors.white,
+                                                      size: 20),
+                                                ],
+                                              )
+                                            ],
+                                          )
+                                              : Row(
+                                            children: [
+                                              // Container(
+                                              //   width: 200,
+                                              //   height: 80,
+                                              //   child: Image.asset(
+                                              //     'lib/ui/img/Logo.png',
+                                              //     fit: BoxFit.contain, // Mantiene proporciones
+                                              //   ),
+                                              // ),
+                                              const SizedBox(width: 14),
+                                              const Text(
+                                                'Asistencia Veterinaria',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight
+                                                        .w600),
+                                              ),
+                                              const Spacer(),
+                                              Row(
+                                                children: const [
+                                                  Icon(Icons.medical_services,
+                                                      color: Colors.white),
+                                                  SizedBox(width: 8),
+                                                  Icon(Icons.local_hospital,
+                                                      color: Colors.white),
+                                                  SizedBox(width: 8),
+                                                  Icon(Icons.pets,
+                                                      color: Colors.white),
+                                                ],
+                                              )
+                                            ],
+                                          ),
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 24),
-                                    _styledButton('Agregar', _addPet, icon: Icons.add, color: Colors.blue),
-                                    const SizedBox(height: 24),
-                                    // DataTable scrollable
-                                    if (_pets.isNotEmpty)
-                                      Container(
-                                        constraints: const BoxConstraints(maxHeight: 200),
-                                        child: Scrollbar(
-                                          thumbVisibility: true,
-                                          child: SingleChildScrollView(
-                                            scrollDirection: Axis.vertical,
-                                            child: DataTable(
-                                              columns: const [
-                                                DataColumn(label: Text('Nombre')),
-                                                DataColumn(label: Text('Acciones')),
-                                              ],
-                                              rows: _pets.asMap().entries.map((e) => DataRow(cells: [
-                                                    DataCell(Text(e.value['nombre'])),
-                                                    DataCell(IconButton(
-                                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                                      onPressed: () => setState(() => _pets.removeAt(e.key)),
-                                                    )),
-                                                  ])).toList(),
+                                        // Imagen
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 18.0),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                                12),
+                                            child: Image.asset(
+                                              'lib/ui/img/Clinica-Veterinaria.png',
+                                              width: double.infinity,
+                                              height: 250,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                  stackTrace) =>
+                                                  Container(
+                                                    color: Colors.grey[200],
+                                                    child: const Center(
+                                                        child: Text(
+                                                            'Error cargando imagen')),
+                                                  ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    const SizedBox(height: 24),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Align(
-                                            alignment: Alignment.bottomLeft,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(bottom: 50),
-                                              child: IconButton(
-                                                icon: const Icon(Icons.arrow_back, size: 32, color: Colors.blueAccent),
-                                                onPressed: () {
-                                                  _pageController.animateToPage(0,
-                                                      duration: const Duration(milliseconds: 500),
-                                                      curve: Curves.easeInOut);
-                                                },
+
+                                        const SizedBox(height: 16),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 0, vertical: 6),
+                                          child: Text(
+                                            'Datos Dueño de la Mascota',
+                                            style: TextStyle(
+                                                color: headerBlue,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                        ),
+
+                                        // Campos Dueño
+                                        _rowLabelFieldResponsive(
+                                          'Nombre dueño de la mascota',
+                                          TextFormField(
+                                            controller: _ownerNameCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            validator: (v) =>
+                                            (v == null || v.isEmpty)
+                                                ? 'Obligatorio'
+                                                : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Apellido del dueño de la mascota',
+                                          TextFormField(
+                                            controller: _ownerLastNameCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            validator: (v) =>
+                                            (v == null || v.isEmpty)
+                                                ? 'Obligatorio'
+                                                : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Cédula',
+                                          TextFormField(
+                                            controller: _idCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            keyboardType: TextInputType.number,
+                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo números
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                              if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                                              return null;
+                                            },
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Celular',
+                                          TextFormField(
+                                            controller: _phoneCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            keyboardType: TextInputType.phone,
+                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo números
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                              if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                                              if (v.length < 10) return 'Mínimo 10 dígitos';
+                                              return null;
+                                            },
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'E-mail',
+                                          TextFormField(
+                                            controller: _emailCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            keyboardType: TextInputType.emailAddress,
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
+                                                return 'Ingrese un email válido';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Ciudad',
+                                          TextFormField(
+                                            controller: _cityCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+
+                                        const SizedBox(height: 20),
+                                        // Datos Mascota
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 0, vertical: 6),
+                                          child: Text(
+                                            'Datos de la Mascota',
+                                            style: TextStyle(
+                                                color: headerBlue,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Nombre de la mascota',
+                                          TextFormField(
+                                            controller: _petNameCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+
+                                        // Dropdowns
+                                        _rowLabelFieldResponsive(
+                                          'Género',
+                                          DropdownButtonFormField<String>(
+                                            value: _selectedGender,
+                                            decoration: _fieldDecoration(
+                                                'Seleccione'),
+                                            items: _genders
+                                                .map((gender) =>
+                                                DropdownMenuItem(value: gender,
+                                                    child: Text(gender)))
+                                                .toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedGender = value;
+                                              });
+                                            },
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Especie',
+                                          DropdownButtonFormField<String>(
+                                            value: _selectedSpecies,
+                                            decoration: _fieldDecoration(
+                                                'Seleccione'),
+                                            items: _species
+                                                .map((specie) =>
+                                                DropdownMenuItem(
+                                                    value: specie,
+                                                    child: Text(specie)))
+                                                .toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedSpecies = value;
+                                                _selectedBreed = null;
+                                              });
+                                            },
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Raza',
+                                          DropdownButtonFormField<String>(
+                                            value: _selectedBreed,
+                                            decoration: _fieldDecoration(
+                                                'Seleccione'),
+                                            items: (_selectedSpecies != null
+                                                ? _breeds[_selectedSpecies!] ??
+                                                <String>[]
+                                                : <String>[])
+                                                .map((breed) =>
+                                                DropdownMenuItem(
+                                                    value: breed,
+                                                    child: Text(breed)))
+                                                .toList(),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedBreed = value;
+                                              });
+                                            },
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        // Fecha nacimiento
+                                        _rowLabelFieldResponsive(
+                                          'Fecha de nacimiento',
+                                          TextFormField(
+                                            controller: _birthDateCtrl,
+                                            readOnly: true,
+                                            decoration: _fieldDecoration(
+                                                'Selecciona fecha'),
+                                            onTap: () async {
+                                              DateTime? pickedDate = await showDatePicker(
+                                                context: context,
+                                                initialDate: DateTime.now(),
+                                                firstDate: DateTime(1900),
+                                                lastDate: DateTime.now(),
+                                                locale: const Locale(
+                                                    'es', 'ES'),
+                                              );
+                                              if (pickedDate != null) {
+                                                setState(() {
+                                                  _selectedBirthDate =
+                                                      pickedDate; // guardamos DateTime
+                                                  _birthDateCtrl.text =
+                                                  "${pickedDate.day
+                                                      .toString()
+                                                      .padLeft(2, '0')}/"
+                                                      "${pickedDate.month
+                                                      .toString().padLeft(
+                                                      2, '0')}/"
+                                                      "${pickedDate.year}";
+                                                });
+                                              }
+                                            },
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Color',
+                                          TextFormField(
+                                            controller: _petColorCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'La mascota tiene algún defecto físico o enfermedad?',
+                                          TextFormField(
+                                            decoration: _fieldDecoration(
+                                                'Especificar'),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _rowLabelFieldResponsive(
+                                          'Carnet',
+                                          TextFormField(
+                                            controller: _petCarnetCtrl,
+                                            decoration: _fieldDecoration(''),
+                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          ),
+                                          isMobile,
+                                        ),
+                                        const SizedBox(height: 12),
+
+                                        // Foto
+                                        Row(
+                                          children: [
+                                            _labelPill('Foto'),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                onPressed: _pickFile,
+                                                icon: const Icon(
+                                                    Icons.upload_file),
+                                                label: const Text('Subir foto'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors
+                                                      .amber[700],
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 14),
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius
+                                                          .circular(16)),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (_photoFile != null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                top: 8.0),
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: Text(
+                                                'Archivo: ${_photoFile!
+                                                    .path
+                                                    .split('/')
+                                                    .last}',
+                                                style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Align(
-                                            alignment: Alignment.bottomRight,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(bottom: 20),
-                                              child: _styledButton('Registrar', _registerPets,
-                                                  icon: Icons.check, color: Colors.green),
+                                        const SizedBox(height: 18),
+
+                                        // Checkbox
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Checkbox(
+                                              value: _acceptData,
+                                              onChanged: (v) {
+                                                if (v ?? false) {
+                                                  _showTermsDialog(context); // Muestra modal solo al marcar
+                                                } else {
+                                                  setState(() => _acceptData = false); // Desmarca directamente
+                                                }
+                                              },
                                             ),
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  setState(() => _acceptData = !_acceptData);
+                                                  if (_acceptData) {
+                                                    _showTermsDialog(context);
+                                                  }
+                                                },
+                                                child: const Text(
+                                                  'Declaro que la información es real y acepto el uso de la misma según la Protección de Datos Personales.',
+                                                  style: TextStyle(fontSize: 13),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),                                        const SizedBox(height: 18),
+
+                                        // Botón agregar mascota
+
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                onPressed: () {
+                                                  if (_petNameCtrl.text
+                                                      .isEmpty ||
+                                                      _selectedBreed == null ||
+                                                      _selectedBirthDate ==
+                                                          null) {
+                                                    ScaffoldMessenger.of(
+                                                        context).showSnackBar(
+                                                      const SnackBar(
+                                                          content: Text(
+                                                              'Completa nombre, raza y fecha de nacimiento de la mascota')),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // Convertimos DateTime a String (dd/MM/yyyy)
+                                                  final birthDateStr =
+                                                      "${_selectedBirthDate!.day
+                                                      .toString().padLeft(
+                                                      2, '0')}/"
+                                                      "${_selectedBirthDate!
+                                                      .month.toString().padLeft(
+                                                      2, '0')}/"
+                                                      "${_selectedBirthDate!
+                                                      .year}";
+
+                                                  setState(() {
+                                                    _mascotas.add({
+                                                      'nombre': _petNameCtrl
+                                                          .text,
+                                                      'raza': _selectedBreed ??
+                                                          '',
+                                                      'species': _selectedSpecies ??
+                                                          '',
+                                                      'gender': _selectedGender ??
+                                                          '',
+                                                      'color': _petColorCtrl
+                                                          .text,
+                                                      //'birth_date': birthDateStr! .toIso8601String(),
+                                                      'birth_date': _selectedBirthDate!
+                                                          .toIso8601String(),
+                                                      // ✅ correcto// <-- ahora es String
+                                                      'carnet': _petCarnetCtrl
+                                                          .text,
+                                                      'defect': '',
+                                                    });
+
+                                                    // Limpiar campos
+                                                    // _petNameCtrl.clear();
+                                                    // _selectedSpecies = null;
+                                                    // _selectedBreed = null;
+                                                    // _birthDateCtrl.clear();
+                                                  });
+                                                },
+                                                icon: const Icon(Icons.add),
+                                                label: const Text(
+                                                    'Agregar Mascota'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.blue,
+                                                  foregroundColor: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+
+                                        // Botón Confirmar y modal de mascotas
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              if (!_acceptData) {
+                                                ScaffoldMessenger
+                                                    .of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                      content: Text(
+                                                          'Debes aceptar el uso de datos')),
+                                                );
+                                                return;
+                                              }
+
+                                              final double modalWidth = MediaQuery
+                                                  .of(context)
+                                                  .size
+                                                  .width < 800
+                                                  ? MediaQuery
+                                                  .of(context)
+                                                  .size
+                                                  .width * 0.9
+                                                  : 600;
+
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    Dialog(
+                                                      insetPadding: const EdgeInsets
+                                                          .all(16),
+                                                      child: Container(
+                                                        width: modalWidth,
+                                                        padding: const EdgeInsets
+                                                            .all(16),
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius
+                                                              .circular(12),
+                                                        ),
+                                                        child: Column(
+                                                          mainAxisSize: MainAxisSize
+                                                              .min,
+                                                          children: [
+                                                            const Text(
+                                                              'Mascotas Registradas',
+                                                              style: TextStyle(
+                                                                  fontSize: 20,
+                                                                  fontWeight: FontWeight
+                                                                      .bold),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 16),
+                                                            SingleChildScrollView(
+                                                              scrollDirection: Axis
+                                                                  .horizontal,
+                                                              child: ConstrainedBox(
+                                                                constraints: BoxConstraints(
+                                                                    maxWidth: 600),
+                                                                child: SingleChildScrollView(
+                                                                  scrollDirection: Axis
+                                                                      .vertical,
+                                                                  child: DataTable(
+                                                                    columns: const [
+                                                                      DataColumn(
+                                                                          label: Text(
+                                                                              'Nombre')),
+                                                                      DataColumn(
+                                                                          label: Text(
+                                                                              'Raza')),
+                                                                      DataColumn(
+                                                                          label: Text(
+                                                                              'Acciones')),
+                                                                    ],
+                                                                    rows: _mascotas
+                                                                        .map(
+                                                                          (m) =>
+                                                                          DataRow(
+                                                                            cells: [
+                                                                              DataCell(
+                                                                                  Text(
+                                                                                      m['nombre']!)),
+                                                                              DataCell(
+                                                                                  Text(
+                                                                                      m['raza']!)),
+                                                                              DataCell(
+                                                                                IconButton(
+                                                                                  icon: const Icon(
+                                                                                      Icons
+                                                                                          .delete,
+                                                                                      color: Colors
+                                                                                          .red),
+                                                                                  onPressed: () {
+                                                                                    setState(() {
+                                                                                      _mascotas
+                                                                                          .remove(
+                                                                                          m);
+                                                                                    });
+                                                                                    Navigator
+                                                                                        .of(
+                                                                                        context)
+                                                                                        .pop();
+                                                                                    Future
+                                                                                        .delayed(
+                                                                                        Duration
+                                                                                            .zero, () {
+                                                                                      showDialog(
+                                                                                        context: context,
+                                                                                        builder: (
+                                                                                            _) =>
+                                                                                            buildMascotasDialog(
+                                                                                                context,
+                                                                                                modalWidth),
+                                                                                      );
+                                                                                    });
+                                                                                  },
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                    )
+                                                                        .toList(),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 20),
+                                                            Row(
+                                                              mainAxisAlignment: MainAxisAlignment.end,
+                                                              children: [
+                                                                TextButton(
+                                                                  onPressed: () {
+                                                                    Navigator.of(context).pop();
+                                                                  },
+                                                                  child: const Text('Cancelar'),
+                                                                ),
+                                                                const SizedBox(width: 12),
+                                                                ElevatedButton(
+                                                                  onPressed: () async {
+                                                                    // Validaciones antes de enviar
+                                                                    if (!_acceptData) {
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        const SnackBar(
+                                                                          content: Text('Debes aceptar los términos y condiciones'),
+                                                                          backgroundColor: Colors.red,
+                                                                        ),
+                                                                      );
+                                                                      return;
+                                                                    }
+
+                                                                    if (_formKey.currentState?.validate() != true) {
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        const SnackBar(
+                                                                          content: Text('Completa todos los campos obligatorios'),
+                                                                          backgroundColor: Colors.red,
+                                                                        ),
+                                                                      );
+                                                                      return;
+                                                                    }
+
+                                                                    if (_mascotas.isEmpty) {
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        const SnackBar(
+                                                                          content: Text('Debes agregar al menos una mascota'),
+                                                                          backgroundColor: Colors.red,
+                                                                        ),
+                                                                      );
+                                                                      return;
+                                                                    }
+
+                                                                    // Cerrar el modal de mascotas
+                                                                    Navigator.of(context).pop();
+
+                                                                    // Enviar datos
+                                                                    await _enviarDatos();
+                                                                  },
+                                                                  style: ElevatedButton.styleFrom(
+                                                                    backgroundColor: const Color(0xFF074B5E),
+                                                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                                                    shape: RoundedRectangleBorder(
+                                                                      borderRadius: BorderRadius.circular(12),
+                                                                    ),
+                                                                  ),
+                                                                  child: const Text(
+                                                                    'Guardar',
+                                                                    style: TextStyle(
+                                                                      color: Colors.white,
+                                                                      fontSize: 16,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(
+                                                  0xFF074B5E),
+                                              padding: const EdgeInsets
+                                                  .symmetric(vertical: 16),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius
+                                                    .circular(12),
+                                              ),
+                                            ),
+                                            child: const Text('Confirmar',
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16)),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                            // Columna derecha (solo escritorio)
+
+                            if (!isMobile)
+                              Expanded(
+                                flex: 3,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: backgroundTurquoise,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      // Iconos arriba
+                                      Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment
+                                              .start,
+                                          children: const [
+                                            Icon(Icons.local_hotel,
+                                                color: Colors.white, size: 32),
+                                            SizedBox(height: 12),
+                                            Icon(Icons.medical_services,
+                                                color: Colors.white, size: 32),
+                                            SizedBox(height: 12),
+                                            Icon(
+                                                Icons.call, color: Colors.white,
+                                                size: 32),
+                                          ],
+                                        ),
+                                      ),
+
+                                      const Spacer(),
+
+                                      // Imagen perro al final
+                                      Padding(
+                                        padding: const EdgeInsets.all(18.0),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                              12),
+                                          child: Image.asset(
+                                            'lib/ui/img/Perro.png',
+                                            width: double.infinity,
+                                            height: 350,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                }),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
-}
 
-/*
-class _FormPageState extends State<FormPage> {
-  final _pageController = PageController();
-  final _formKeyOwner = GlobalKey<FormState>();
-  final _formKeyPet = GlobalKey<FormState>();
 
-  // Dueño
-  final TextEditingController _ownerName = TextEditingController();
-  final TextEditingController _ownerId = TextEditingController();
-  final TextEditingController _ownerPhone = TextEditingController();
-  final TextEditingController _ownerAddress = TextEditingController();
-  final TextEditingController _ownerEmail = TextEditingController();
-  bool _acceptTerms = false;
-
-  // Mascota
-  final TextEditingController _petName = TextEditingController();
-  String? _petGender;
-  String? _petBreed;
-  final TextEditingController _petAge = TextEditingController();
-  final TextEditingController _petCard = TextEditingController();
-  File? _petFile;
-  List<Map<String, dynamic>> _pets = [];
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _ownerName.dispose();
-    _ownerId.dispose();
-    _ownerPhone.dispose();
-    _ownerAddress.dispose();
-    _ownerEmail.dispose();
-    _petName.dispose();
-    _petAge.dispose();
-    _petCard.dispose();
-    super.dispose();
-  }
-
-  void _showTermsModal() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Términos y Condiciones"),
-        content: const Text(
-            "Aquí se muestran los términos y condiciones del servicio."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _acceptTerms = true;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Aceptar"),
+// Función auxiliar responsive
+  Widget _rowLabelFieldResponsive(String label, Widget field, bool isMobile) {
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _labelPill(label),
+          ),
+          field,
+        ],
+      );
+    } else {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 200, // Ancho fijo para desktop
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6), // Ajuste fino de alineación
+              child: _labelPill(label),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: field,
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _petFile = File(result.files.single.path!);
-      });
-    }
-  }
-
-  void _addPet() {
-    if (_formKeyPet.currentState!.validate() &&
-        _petGender != null &&
-        _petBreed != null) {
-      setState(() {
-        _pets.add({
-          'nombre': _petName.text,
-          'genero': _petGender,
-          'raza': _petBreed,
-        });
-        _petName.clear();
-        _petGender = null;
-        _petBreed = null;
-        _petAge.clear();
-        _petCard.clear();
-        _petFile = null;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Complete todos los campos')),
       );
     }
   }
 
-  void _registerPets() {
+  Widget _labelPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A5970), // Azul oscuro directo
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white, // Texto blanco
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  void _showTermsDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Datos enviados'),
-        content: const Text('El registro de mascotas se ha completado.'),
+        title: const Text('Tratamiento de Datos Personales'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'OTTOKARE, conforme a lo dispuesto en la Ley Orgánica de Protección de Datos Personales (LOPDP), informa a los titulares que:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(color: Colors.black87, fontSize: 12),
+                  children: [
+                    TextSpan(
+                      text: '1. Datos personales que se recopilarán\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'Se podrán tratar las siguientes categorías:\n\n'
+                          '   • Datos identificativos: nombres, apellidos, cédula/pasaporte, dirección, teléfono, correo electrónico.\n\n'
+                          '   • Datos de pago: número de cuenta o tarjeta, historial de pagos.\n\n'
+                          '   • Datos relacionados con la mascota: nombre, especie, raza, edad, historial médico veterinario, características físicas, fotografías.\n\n'
+                          '   • Datos sensibles: información sobre la salud de la mascota.\n\n',
+                    ),
+                    TextSpan(
+                      text: '2. Finalidades del tratamiento\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'Los datos serán tratados con las siguientes finalidades:\n\n'
+                          '   • Gestionar la suscripción y prestación del servicio de asistencia para mascotas.\n\n'
+                          '   • Coordinar atención veterinaria, transporte o servicios complementarios conforme el certificado de cobertura.\n\n'
+                          '   • Realizar seguimiento y control de casos de asistencia.\n\n'
+                          '   • Gestionar pagos, facturación y cobranzas.\n\n'
+                          '   • Atender consultas, solicitudes o reclamos.\n\n'
+                          '   • Cumplir con obligaciones legales, contractuales o regulatorias.\n\n'
+                          '   • Enviar comunicaciones informativas o comerciales relacionadas con el servicio, siempre que el titular no haya ejercido su derecho de oposición.\n\n',
+                    ),
+                    TextSpan(
+                      text: '3. Base legal del tratamiento\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'El tratamiento se realiza sobre las siguientes bases legitimadoras:\n\n'
+                          '   • Que sea realizado por el responsable del tratamiento, por orden judicial u obligación legal.\n\n'
+                          '   • Para la ejecución de medidas precontractuales a petición del titular o para el cumplimiento de obligaciones contractuales.\n\n'
+                          '   • Para satisfacer un interés legítimo del responsable de tratamiento.\n\n',
+                    ),
+                    TextSpan(
+                      text: '4. Comunicación y almacenamiento de datos\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'Los datos podrán ser compartidos con proveedores, veterinarios, clínicas, aseguradoras, empresas de transporte o call centers que actúen como encargados del tratamiento, únicamente para el cumplimiento de las finalidades antes descritas.\n\n'
+                          'En caso de transferencias internacionales, se garantizará que el país de destino cuente con niveles adecuados de protección o que existan garantías contractuales suficientes.\n\n'
+                          'El almacenamiento podrá realizarse en servidores propios o en servicios de computación en la nube, con las medidas técnicas y organizativas necesarias para proteger la información.\n\n',
+                    ),
+                    TextSpan(
+                      text: '5. Plazo de conservación\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'En el caso de que se termine la relación contractual con los Titulares, OTTOKARE conservará los datos personales de estos por un período de tiempo razonable para permitir la defensa del Responsable del Tratamiento en caso de presentarse algún reclamo administrativo o judicial por él o en su contra con relación a la prestación de los servicios que ofrece. En todo caso, los datos personales serán tratados en la medida en que sean necesarios para satisfacer los fines para los cuales se recogieron, o para cumplir con cualquier requisito legal, por lo que el plazo podría prolongarse. En el supuesto de que la autoridad establezca plazos determinados, OTTOKARE se compromete a tratar los datos personales hasta el plazo máximo establecido por esta. OTTOKARE se compromete a que, en el supuesto de que no se requiera el tratamiento de los datos personales de los Titulares durante un periodo de tiempo razonable, este tomará todas las medidas de seguridad pertinentes para eliminar, bloquear, seudonimizar o anonimizar los datos personales.\n\n',
+                    ),
+                    TextSpan(
+                      text: '6. Derechos del titular\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'Para el ejercicio de cualquiera de los derechos aquí plasmados o reclamación única y exclusivamente sobre el tratamiento de datos personales, los Titulares deberán enviar una solicitud a la siguiente dirección electrónica: legal@mmhcloseness.com\n\n'
+                          'La solicitud deberá contener, al menos lo siguiente:\n\n'
+                          '   • Nombres y apellidos completos de los Titulares, número de cédula de identidad o pasaporte y dirección domiciliaria o electrónica para notificaciones. Cuando se actúa en calidad de representante legal, se hará constar también los datos del representado.\n\n'
+                          '   • La descripción clara y precisa del derecho que se busca ejercer y detalle de los datos personales en los cuales se busca ejercer el mismo, conforme la Ley Orgánica de Protección de Datos Personales.\n\n'
+                          '   • A la solicitud se acompañará los documentos que acrediten la identidad o, en su caso, la representación legal o convencional del titular.\n\n'
+                          'En caso de que la información constante en la solicitud requiera ser aclarecida o ampliada, OTTOKARE requerirá a los Titulares, por una sola vez y dentro del término de cinco días de recibida la solicitud, que la aclare o complete. Los Titulares contará con el término de diez días contados a partir del día siguiente en el que haya sido notificado con la solicitud de aclaración o ampliación para aclarar o completar la solicitud. Si los Titulares aclaran o completan la solicitud dentro del término mencionado, el Responsable del Tratamiento dará la debida atención a la solicitud, caso contrario, OTTOKARE se reserva el derecho de archivar la solicitud, para lo cual se notificará a los Titulares de este hecho con las razones de la decisión. En el caso de que se lo requiera, los Titulares podrán comunicarse directamente con la Autoridad de Protección de Datos Personales ecuatoriana.\n\n',
+                    ),
+                    TextSpan(
+                      text: '7. No entrega de datos personales, o datos erróneos o inexactos\n',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text: 'Para el cumplimiento de cualquiera de los fines establecidos por OTTOKARE, los Titulares deberán entregar la información exacta y completa, caso contrario los servicios o solicitudes no podrán ser prestados de manera adecuada. Así mismo, OTTOKARE se reserva el derecho de no prestar el servicio o solicitudes a los Titulares, si los datos de estos no son entregados, o son entregados con errores, inexactos o incorrectos.',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              _pageController.animateToPage(0,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut);
-              setState(() {
-                _pets.clear();
-              });
+              Navigator.of(context).pop();
+              setState(() => _acceptData = false);
+            },
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() => _acceptData = true);
             },
             child: const Text('Aceptar'),
           ),
         ],
+        scrollable: true,
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool isPassword = false}) {
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.black87, fontSize: 14),
-      validator: (v) => (v == null || v.isEmpty) ? 'Campo requerido' : null,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black54),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      ),
-    );
-  }
 
-  Widget _buildDropdownField(String label, String? value, List<String> items,
-      ValueChanged<String?> onChanged) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      validator: (v) => v == null ? 'Seleccione una opción' : null,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black54),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      ),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _styledButton(String text, VoidCallback onPressed) {
-    return SizedBox(
-      width: double.infinity,
-      height: 45,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueAccent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Image.network(
-            'https://c.files.bbci.co.uk/48DD/production/_107435681_perro1.jpg',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-          ),
-          Container(color: Colors.black.withOpacity(0.5)),
-          Center(
-            child: Container(
-              width: 1000, // más ancho para campos dobles
-              height: 650,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Panel izquierdo
-                  Expanded(
-                    flex: 4,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          bottomLeft: Radius.circular(8),
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Image.network(
-                              'https://c.files.bbci.co.uk/48DD/production/_107435681_perro1.jpg',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(8),
-                                bottomLeft: Radius.circular(8),
-                              ),
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: [
-                                  Colors.black.withOpacity(0.7),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(40),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Formulario Corporativo',
-                                  style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Gestión de Dueño y Mascota',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Panel derecho
-                  Expanded(
-                    flex: 7,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 30),
-                      child: PageView(
-                        controller: _pageController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          // Página 1 - Dueño
-                          Form(
-                            key: _formKeyOwner,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Dueño de Mascota',
-                                      style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: _buildTextField(
-                                              'Nombre', _ownerName)),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                          child: _buildTextField(
-                                              'Cédula', _ownerId)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: _buildTextField(
-                                              'Teléfono', _ownerPhone)),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                          child: _buildTextField(
-                                              'Correo electrónico',
-                                              _ownerEmail)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  _buildTextField('Dirección', _ownerAddress),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Checkbox(
-                                        value: _acceptTerms,
-                                        onChanged: (value) {
-                                          if (value == true && !_acceptTerms) {
-                                            _showTermsModal();
-                                          }
-                                        },
-                                        activeColor: Colors.blueAccent,
-                                      ),
-                                      const Text(
-                                        'Aceptar Términos y Condiciones',
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _styledButton('Siguiente', () {
-                                    if (_acceptTerms &&
-                                        _formKeyOwner.currentState!
-                                            .validate()) {
-                                      _pageController.animateToPage(1,
-                                          duration:
-                                              const Duration(milliseconds: 500),
-                                          curve: Curves.easeInOut);
-                                    }
-                                  }),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Página 2 - Mascota
-                          Form(
-                            key: _formKeyPet,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Registro Mascota',
-                                      style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 20),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: _buildTextField(
-                                              'Nombre Mascota', _petName)),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                          child: _buildDropdownField(
-                                              'Género',
-                                              _petGender,
-                                              ['Macho', 'Hembra'],
-                                              (v) {
-                                            setState(() => _petGender = v);
-                                          })),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: _buildDropdownField(
-                                              'Raza',
-                                              _petBreed,
-                                              ['Perro', 'Gato', 'Ave'],
-                                              (v) {
-                                            setState(() => _petBreed = v);
-                                          })),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                          child: _buildTextField(
-                                              'Edad', _petAge)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child:
-                                              _buildTextField('Carnet', _petCard)),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child:
-                                            _styledButton('Subir Archivo', _pickFile),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _styledButton('Agregar', _addPet),
-                                  const SizedBox(height: 24),
-                                  if (_pets.isNotEmpty)
-                                    SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: DataTable(
-                                        columns: const [
-                                          DataColumn(label: Text('Nombre')),
-                                          DataColumn(label: Text('Acciones')),
-                                        ],
-                                        rows: _pets
-                                            .asMap()
-                                            .entries
-                                            .map((e) => DataRow(cells: [
-                                                  DataCell(
-                                                      Text(e.value['nombre'])),
-                                                  DataCell(IconButton(
-                                                    icon: const Icon(Icons.delete,
-                                                        color: Colors.red),
-                                                    onPressed: () {
-                                                      setState(() =>
-                                                          _pets.removeAt(e.key));
-                                                    },
-                                                  )),
-                                                ]))
-                                            .toList(),
-                                      ),
-                                    ),
-                                  const SizedBox(height: 24),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                          child: _styledButton('Atrás', () {
-                                        _pageController.animateToPage(0,
-                                            duration: const Duration(
-                                                milliseconds: 500),
-                                            curve: Curves.easeInOut);
-                                      })),
-                                      const SizedBox(width: 20),
-                                      Expanded(
-                                          child: _styledButton(
-                                              'Registrar', _registerPets)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 30),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-*/
-/*
-class _FormPageState extends State<FormPage> {
-  final _pageController = PageController();
-  final _formKeyOwner = GlobalKey<FormState>();
-  final _formKeyPet = GlobalKey<FormState>();
-
-  // Dueño
-  final TextEditingController _ownerName = TextEditingController();
-  final TextEditingController _ownerId = TextEditingController();
-  final TextEditingController _ownerPhone = TextEditingController();
-  final TextEditingController _ownerAddress = TextEditingController();
-  final TextEditingController _ownerEmail = TextEditingController();
-  bool _acceptTerms = false;
-
-  // Mascota
-  final TextEditingController _petName = TextEditingController();
-  String? _petGender;
-  String? _petBreed;
-  final TextEditingController _petAge = TextEditingController();
-  final TextEditingController _petCard = TextEditingController();
-  File? _petFile;
-  Uint8List? _petFileBytes;
-
-  List<Map<String, dynamic>> _pets = [];
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _ownerName.dispose();
-    _ownerId.dispose();
-    _ownerPhone.dispose();
-    _ownerAddress.dispose();
-    _ownerEmail.dispose();
-    _petName.dispose();
-    _petAge.dispose();
-    _petCard.dispose();
-    super.dispose();
-  }
-
-  void _showTermsModal() {
+  Future<void> _enviarDatos() async {
+    // Mostrar indicador de carga
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Términos y Condiciones"),
-        content: const Text("Aquí se muestran los términos y condiciones del servicio."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _acceptTerms = true;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("Aceptar"),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
-  }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool isPassword = false}) {
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.black87, fontSize: 14),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Campo obligatorio';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black54),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(4),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      ),
-    );
-  }
-
-  Widget _buildDropdownField(String label, String? value, List<String> items, Function(String?) onChanged) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
-      ),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-      onChanged: onChanged,
-      validator: (v) => v == null ? 'Seleccione una opción' : null,
-    );
-  }
-
-  Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      setState(() {
-        if (kIsWeb) {
-          _petFileBytes = result.files.single.bytes;
-        } else {
-          _petFile = File(result.files.single.path!);
-        }
-      });
-    }
-  }
-
-  void _addPet() {
-    if (_formKeyPet.currentState!.validate()) {
-      setState(() {
-        _pets.add({
-          'nombre': _petName.text,
-          'genero': _petGender!,
-          'raza': _petBreed!,
-          'edad': _petAge.text,
-          'carnet': _petCard.text,
-          'archivo': kIsWeb ? _petFileBytes : _petFile,
-        });
-
-        // limpiar campos
-        _petName.clear();
-        _petAge.clear();
-        _petCard.clear();
-        _petGender = null;
-        _petBreed = null;
-        _petFile = null;
-        _petFileBytes = null;
-      });
-    }
-  }
-
-  void _registerPets() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Registro"),
-        content: const Text("Datos enviados exitosamente"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _pageController.animateToPage(0,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut);
-            },
-            child: const Text("Atrás"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _styledButton(String text, VoidCallback onPressed) {
-    return SizedBox(
-      width: double.infinity,
-      height: 45,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueAccent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        ),
-        child: Text(text),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Fondo oscuro con imagen
-          Image.network(
-            'https://c.files.bbci.co.uk/48DD/production/_107435681_perro1.jpg',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-          ),
-          Container(color: Colors.black.withOpacity(0.5)),
-          Center(
-            child: Container(
-              width: 950,
-              height: 650,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20)],
-              ),
-              child: Row(
-                children: [
-                  // Imagen lateral
-                  Expanded(
-                    flex: 4,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Image.network(
-                              'https://c.files.bbci.co.uk/48DD/production/_107435681_perro1.jpg',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(40),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Formulario Corporativo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-                                SizedBox(height: 8),
-                                Text('Gestión de Dueño y Mascota', style: TextStyle(fontSize: 16, color: Colors.white70)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Formulario
-                  Expanded(
-                    flex: 6,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
-                      child: PageView(
-                        controller: _pageController,
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          // Página 1 - Dueño
-                          Form(
-                            key: _formKeyOwner,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Dueño de Mascota', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 20),
-                                _buildTextField('Nombre', _ownerName),
-                                const SizedBox(height: 16),
-                                _buildTextField('Cédula', _ownerId),
-                                const SizedBox(height: 16),
-                                _buildTextField('Teléfono', _ownerPhone),
-                                const SizedBox(height: 16),
-                                _buildTextField('Dirección', _ownerAddress),
-                                const SizedBox(height: 16),
-                                _buildTextField('Correo electrónico', _ownerEmail),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Checkbox(
-                                      value: _acceptTerms,
-                                      onChanged: (value) { if(value == true && !_acceptTerms) _showTermsModal(); },
-                                      activeColor: Colors.blueAccent,
-                                    ),
-                                    const Text('Aceptar Términos y Condiciones', style: TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                _styledButton('Siguiente', () {
-                                  if(_acceptTerms && _formKeyOwner.currentState!.validate()){
-                                    _pageController.animateToPage(1, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                                  }
-                                }),
-                              ],
-                            ),
-                          ),
-                          // Página 2 - Mascota
-                          Form(
-                            key: _formKeyPet,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Registro Mascota', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 16),
-                                  _buildTextField('Nombre Mascota', _petName),
-                                  const SizedBox(height: 16),
-                                  _buildDropdownField('Género', _petGender, ['Macho','Hembra'], (v){ setState(()=>_petGender=v); }),
-                                  const SizedBox(height: 16),
-                                  _buildDropdownField('Raza', _petBreed, ['Perro','Gato','Ave'], (v){ setState(()=>_petBreed=v); }),
-                                  const SizedBox(height: 16),
-                                  _buildTextField('Edad', _petAge),
-                                  const SizedBox(height: 16),
-                                  _buildTextField('Carnet', _petCard),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(child: _styledButton('Subir Archivo', _pickFile)),
-                                      const SizedBox(width: 16),
-                                      Text(_petFile != null ? 'Archivo seleccionado' : (_petFileBytes != null ? 'Archivo seleccionado' : '')),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _styledButton('Agregar', _addPet),
-                                  const SizedBox(height: 16),
-                                  _pets.isNotEmpty
-                                      ? SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: DataTable(
-                                            columns: const [
-                                              DataColumn(label: Text('Nombre')),
-                                              DataColumn(label: Text('Acciones')),
-                                            ],
-                                            rows: _pets.asMap().entries.map((e){
-                                              final nombre = e.value['nombre'] ?? '';
-                                              return DataRow(cells: [
-                                                DataCell(Text(nombre)),
-                                                DataCell(IconButton(
-                                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                                  onPressed: () { setState(()=>_pets.removeAt(e.key)); },
-                                                )),
-                                              ]);
-                                            }).toList(),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink(),
-                                  const SizedBox(height: 24),
-                                  Row(
-                                    children: [
-                                      Expanded(child: _styledButton('Atrás', (){
-                                        _pageController.animateToPage(0, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-                                      })),
-                                      const SizedBox(width: 16),
-                                      Expanded(child: _styledButton('Registrar', _registerPets)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-*/
-
-
-
-
-/*import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/form_bloc.dart';
-import '../bloc/form_event.dart';
-import '../bloc/form_blocstate.dart'; // ahora es FormBlocState
-
-class FormPage extends StatefulWidget {
-  const FormPage({super.key});
-
-  @override
-  State<FormPage> createState() => _FormPageState();
-}
-
- class _FormPageState extends State<FormPage> with SingleTickerProviderStateMixin{
-  final _formKey = GlobalKey<FormState>();
-
-  //Datos del Dueño de la Mascota
-  final TextEditingController _nombreDuenoController = TextEditingController();
-  final TextEditingController _cedulaDuenoController = TextEditingController();
-  final TextEditingController _telefonoDuenoController = TextEditingController();
-  final TextEditingController _direccionDuenoController = TextEditingController();
-  final TextEditingController _correoElectronicoDuenoController = TextEditingController();
-
-
-  //Datos de la Mascota
-  final TextEditingController _nombreMascotaController = TextEditingController();
-  final TextEditingController _generoMascotaController = TextEditingController();
-  final TextEditingController _razaMascotaController = TextEditingController();
-  final TextEditingController _edadMascotaController = TextEditingController();
-  final TextEditingController _carnetMascotaController = TextEditingController();
-  final TextEditingController _fotoMascotaController = TextEditingController();
-
-  int _currentStep = 0;
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-
-
-  @override
-  void initState(){
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
+    try {
+      final mensaje = await _formRepository.enviarDatos(
+        nombre: _ownerNameCtrl.text,
+        apellido: _ownerLastNameCtrl.text, // Asegurando que se envía el apellido
+        cedula: _idCtrl.text,
+        celular: _phoneCtrl.text,
+        email: _emailCtrl.text,
+        ciudad: _cityCtrl.text,
+        mascotas: _mascotas,
       );
-    _fadeAnimation  = CurvedAnimation(
-      parent: _controller, 
-      curve: Curves.easeInOut,
+
+      // Cerrar indicador de carga
+      Navigator.of(context).pop();
+
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensaje),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
       );
-      _controller.forward();
 
-  }
+      // Limpiar formulario
+      _limpiarFormularios();
 
-  @override
-  void dispose(){
-    _controller.dispose();
-    _nombreDuenoController.dispose();
-    _telefonoDuenoController.dispose();
-    _cedulaDuenoController.dispose();
-    _correoElectronicoDuenoController.dispose();
-    _direccionDuenoController.dispose();
-    _nombreMascotaController.dispose();
-    _generoMascotaController.dispose();
-    _razaMascotaController.dispose();
-    _edadMascotaController.dispose();
-    _carnetMascotaController.dispose();
-    _fotoMascotaController.dispose();
-    super.dispose();
-  }
+    } catch (e) {
+      // Cerrar indicador de carga en caso de error
+      Navigator.of(context).pop();
 
-  void _nextStep(){
-    if(_currentStep < 1){
-      setState(() {
-        _currentStep ++;
-      });
-      _controller.forward(from:  0);
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al enviar los datos: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
-  void _previousStep(){
-    if(_currentStep > 0){
-      setState(() {
-        _currentStep --;
-      });
-      _controller.forward(from: 0);
-
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Registro Mascotas"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.red, Colors.orange],
-              begin:  Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: BlocConsumer<FormBloc, FormBlocState>(
-          listener: (context, state){
-            if(state is FormSuccess){
-              ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.mensaje)));
-            }else if(state is FormError){
-              ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.error)));
-            }
-          },
-          builder: (context, state) {
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: Stepper(
-                type: StepperType.vertical,
-                currentStep: _currentStep,
-                onStepContinue: _nextStep,
-                onStepCancel: _previousStep,
-                controlsBuilder: (context, details) {
-                  return Row(
-                    children: [
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          backgroundColor: Colors.deepOrange,
-                          shadowColor: Colors.black,
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        onPressed: details.onStepContinue,
-                        child: const Text(
-                          "Siguiente",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      if (_currentStep > 0)
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.deepOrange),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          onPressed: details.onStepCancel,
-                          child: const Text("Atrás"),
-                        )
-                    ],
-                  );
-                },
-                steps: [
-                  // Paso 1: Datos del dueño
-                  Step(
-                    title: const Text("Datos del Dueño"),
-                    content: Column(
-                      children: [
-                        TextFormField(
-                          controller: _nombreDuenoController,
-                          decoration: InputDecoration(
-                            labelText: "Nombre",
-                            prefixIcon: const Icon(Icons.person, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _cedulaDuenoController,
-                          decoration: InputDecoration(
-                            labelText: "Cedula",
-                            prefixIcon: const Icon(Icons.email, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _telefonoDuenoController,
-                          decoration: InputDecoration(
-                            labelText: "Teléfono",
-                            prefixIcon: const Icon(Icons.phone, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _direccionDuenoController,
-                          decoration: InputDecoration(
-                            labelText: "Direccion",
-                            prefixIcon: const Icon(Icons.phone, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _correoElectronicoDuenoController,
-                          decoration: InputDecoration(
-                            labelText: "Correo electronico",
-                            prefixIcon: const Icon(Icons.email, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    isActive: _currentStep >= 0,
-                  ),
-
-                  // Paso 2: Datos de la mascota
-                  Step(
-                    title: const Text("Datos de la Mascota"),
-                    content: Column(
-                      children: [
-                        TextFormField(
-                          controller: _nombreMascotaController,
-                          decoration: InputDecoration(
-                            labelText: "Nombre de la mascota",
-                            prefixIcon: const Icon(Icons.pets, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _generoMascotaController,
-                          decoration: InputDecoration(
-                            labelText: "Genero",
-                            prefixIcon: const Icon(Icons.category, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _razaMascotaController,
-                          decoration: InputDecoration(
-                            labelText: "Raza",
-                            prefixIcon: const Icon(Icons.category, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _edadMascotaController,
-                          decoration: InputDecoration(
-                            labelText: "Edad",
-                            prefixIcon: const Icon(Icons.info_outline, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _carnetMascotaController,
-                          decoration: InputDecoration(
-                            labelText: "Carnet",
-                            prefixIcon: const Icon(Icons.category, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _fotoMascotaController,
-                          decoration: InputDecoration(
-                            labelText: "Foto",
-                            prefixIcon: const Icon(Icons.category, color: Colors.red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        if (state is FormLoading)
-                          const CircularProgressIndicator()
-                        else
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                              backgroundColor: Colors.redAccent,
-                              shadowColor: Colors.black,
-                              elevation: 8,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            onPressed: () {
-                              // Aquí se validaría si quieres
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Formulario listo para enviar")));
-                            },
-                            child: const Text(
-                              "Finalizar",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                      ],
-                    ),
-                    isActive: _currentStep >= 1,
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
 }
-*/
- 
-/*
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nombreController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-
-  FormPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Formulario con BLoC")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: BlocConsumer<FormBloc, FormBlocState>(
-          listener: (context, state) {
-            if (state is FormSuccess) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.mensaje)));
-            } else if (state is FormError) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.error)));
-            }
-          },
-          builder: (context, state) {
-            return Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nombreController,
-                    decoration: const InputDecoration(labelText: "Nombre"),
-                    validator: (value) =>
-                        value!.isEmpty ? "Ingrese su nombre" : null,
-                  ),
-                  const SizedBox(height: 10),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: "Email"),
-                    validator: (value) =>
-                        value!.isEmpty ? "Ingrese su email" : null,
-                  ),
-                  const SizedBox(height: 20),
-                  if (state is FormLoading)
-                    const CircularProgressIndicator()
-                  else
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          context.read<FormBloc>().add(
-                                EnviarFormulario(
-                                  _nombreController.text,
-                                  _emailController.text,
-                                ),
-                              );
-                        }
-                      },
-                      child: const Text("Enviar"),
-                    )
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-*/
