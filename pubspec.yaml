@@ -66,6 +66,7 @@ flutter:
     - lib/ui/img/Perro.svg
     - lib/ui/img/Perro.png
     - lib/ui/img/Logo.png
+    - lib/ui/img/Gato.png
 
   uses-material-design: true
   generate: true

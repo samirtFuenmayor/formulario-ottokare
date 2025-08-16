@@ -213,7 +213,9 @@ class _FormPageState extends State<FormPage> {
               child: DataTable(
                 columns: const [
                   DataColumn(label: Text('Nombre')),
+                  DataColumn(label: Text('Especie')),
                   DataColumn(label: Text('Raza')),
+                  DataColumn(label: Text('Carnet')),
                   DataColumn(label: Text('Acciones')),
                 ],
                 rows: _mascotas
@@ -221,7 +223,9 @@ class _FormPageState extends State<FormPage> {
                       (m) =>
                       DataRow(cells: [
                         DataCell(Text(m['nombre']!)),
+                        DataCell(Text(m['specie']!)),
                         DataCell(Text(m['raza']!)),
+                        DataCell(Text(m['carnet']!)),
                         DataCell(
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
@@ -381,6 +385,7 @@ class _FormPageState extends State<FormPage> {
       _acceptData = false;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +566,7 @@ class _FormPageState extends State<FormPage> {
                                           'Nombre dueño de la mascota',
                                           TextFormField(
                                             controller: _ownerNameCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Nombre'),
                                             validator: (v) =>
                                             (v == null || v.isEmpty)
                                                 ? 'Obligatorio'
@@ -574,7 +579,7 @@ class _FormPageState extends State<FormPage> {
                                           'Apellido del dueño de la mascota',
                                           TextFormField(
                                             controller: _ownerLastNameCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Apellido'),
                                             validator: (v) =>
                                             (v == null || v.isEmpty)
                                                 ? 'Obligatorio'
@@ -587,7 +592,7 @@ class _FormPageState extends State<FormPage> {
                                           'Cédula',
                                           TextFormField(
                                             controller: _idCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Cedula'),
                                             keyboardType: TextInputType.number,
                                             inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo números
                                             validator: (v) {
@@ -603,7 +608,7 @@ class _FormPageState extends State<FormPage> {
                                           'Celular',
                                           TextFormField(
                                             controller: _phoneCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Celular'),
                                             keyboardType: TextInputType.phone,
                                             inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo números
                                             validator: (v) {
@@ -620,7 +625,7 @@ class _FormPageState extends State<FormPage> {
                                           'E-mail',
                                           TextFormField(
                                             controller: _emailCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Correo Electronico'),
                                             keyboardType: TextInputType.emailAddress,
                                             validator: (v) {
                                               if (v == null || v.isEmpty) return 'Campo obligatorio';
@@ -637,7 +642,7 @@ class _FormPageState extends State<FormPage> {
                                           'Ciudad',
                                           TextFormField(
                                             controller: _cityCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Ciudad'),
                                             validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
@@ -661,7 +666,7 @@ class _FormPageState extends State<FormPage> {
                                           'Nombre de la mascota',
                                           TextFormField(
                                             controller: _petNameCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Nombre de la Mascota'),
                                             validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
@@ -780,7 +785,7 @@ class _FormPageState extends State<FormPage> {
                                           'Color',
                                           TextFormField(
                                             controller: _petColorCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Coloque el color de su Mascota'),
                                             validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
@@ -790,7 +795,7 @@ class _FormPageState extends State<FormPage> {
                                           'La mascota tiene algún defecto físico o enfermedad?',
                                           TextFormField(
                                             decoration: _fieldDecoration(
-                                                'Especificar'),
+                                                'Especifique'),
                                             validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
@@ -800,7 +805,7 @@ class _FormPageState extends State<FormPage> {
                                           'Carnet',
                                           TextFormField(
                                             controller: _petCarnetCtrl,
-                                            decoration: _fieldDecoration(''),
+                                            decoration: _fieldDecoration('Digite el numero de Carnet'),
                                             validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
@@ -880,7 +885,8 @@ class _FormPageState extends State<FormPage> {
                                               ),
                                             ),
                                           ],
-                                        ),                                        const SizedBox(height: 18),
+                                        ),
+                                        const SizedBox(height: 18),
 
                                         // Botón agregar mascota
 
@@ -894,11 +900,12 @@ class _FormPageState extends State<FormPage> {
                                                       _selectedBreed == null ||
                                                       _selectedBirthDate ==
                                                           null) {
+
                                                     ScaffoldMessenger.of(
                                                         context).showSnackBar(
                                                       const SnackBar(
                                                           content: Text(
-                                                              'Completa nombre, raza y fecha de nacimiento de la mascota')),
+                                                              'Complete todos los datos del formulario')),
                                                     );
                                                     return;
                                                   }
@@ -935,6 +942,13 @@ class _FormPageState extends State<FormPage> {
                                                       'defect': '',
                                                     });
 
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Mascota agregada correctamente'),
+                                                        backgroundColor: Colors.green,
+                                                      ),
+                                                    );
+
                                                     // Limpiar campos
                                                     // _petNameCtrl.clear();
                                                     // _selectedSpecies = null;
@@ -946,7 +960,7 @@ class _FormPageState extends State<FormPage> {
                                                 label: const Text(
                                                     'Agregar Mascota'),
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.blue,
+                                                  backgroundColor: Colors.green,
                                                   foregroundColor: Colors.white,
                                                 ),
                                               ),
@@ -1004,8 +1018,10 @@ class _FormPageState extends State<FormPage> {
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight
-                                                                      .bold),
+                                                                      .bold
+                                                              ),
                                                             ),
+
                                                             const SizedBox(
                                                                 height: 16),
                                                             SingleChildScrollView(
@@ -1019,52 +1035,25 @@ class _FormPageState extends State<FormPage> {
                                                                       .vertical,
                                                                   child: DataTable(
                                                                     columns: const [
-                                                                      DataColumn(
-                                                                          label: Text(
-                                                                              'Nombre')),
-                                                                      DataColumn(
-                                                                          label: Text(
-                                                                              'Raza')),
-                                                                      DataColumn(
-                                                                          label: Text(
-                                                                              'Acciones')),
+                                                                      DataColumn(label: Text('Nombre')),
+                                                                      DataColumn(label: Text('Epecies')),
+                                                                      DataColumn(label: Text('Raza')),
+                                                                      DataColumn(label: Text('Carnet')),
+                                                                      DataColumn(label: Text('Acciones')),
                                                                     ],
-                                                                    rows: _mascotas
-                                                                        .map(
-                                                                          (m) =>
-                                                                          DataRow(
-                                                                            cells: [
-                                                                              DataCell(
-                                                                                  Text(
-                                                                                      m['nombre']!)),
-                                                                              DataCell(
-                                                                                  Text(
-                                                                                      m['raza']!)),
-                                                                              DataCell(
-                                                                                IconButton(
-                                                                                  icon: const Icon(
-                                                                                      Icons
-                                                                                          .delete,
-                                                                                      color: Colors
-                                                                                          .red),
+                                                                    rows: _mascotas.map((m) =>
+                                                                          DataRow(cells: [
+                                                                            DataCell(Text(m['nombre']!)),
+                                                                            DataCell(Text(m['species']!)),
+                                                                            DataCell(Text(m['raza']!)),
+                                                                            DataCell(Text(m['carnet']!)),
+                                                                              DataCell(IconButton(icon: const Icon(Icons.delete, color: Colors.red),
                                                                                   onPressed: () {
-                                                                                    setState(() {
-                                                                                      _mascotas
-                                                                                          .remove(
-                                                                                          m);
+                                                                                    setState(() {_mascotas.remove(m);
                                                                                     });
-                                                                                    Navigator
-                                                                                        .of(
-                                                                                        context)
-                                                                                        .pop();
-                                                                                    Future
-                                                                                        .delayed(
-                                                                                        Duration
-                                                                                            .zero, () {
-                                                                                      showDialog(
-                                                                                        context: context,
-                                                                                        builder: (
-                                                                                            _) =>
+                                                                                    Navigator.of(context).pop();
+                                                                                    Future.delayed(Duration.zero, () {
+                                                                                      showDialog(context: context, builder: (_) =>
                                                                                             buildMascotasDialog(
                                                                                                 context,
                                                                                                 modalWidth),
@@ -1177,8 +1166,8 @@ class _FormPageState extends State<FormPage> {
                                 ),
                               ),
                             ),
-                            // Columna derecha (solo escritorio)
 
+                            // Columna derecha (solo escritorio)
                             if (!isMobile)
                               Expanded(
                                 flex: 3,
@@ -1188,23 +1177,232 @@ class _FormPageState extends State<FormPage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+
+                                      const SizedBox(height: 100),
+                                      //TEXTO CON FRANJA
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Título en azul con salto de línea
+                                            const Text(
+                                              "Mantén\nProtegido",
+                                              style: TextStyle(
+                                                fontSize: 32, // más grande
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFFFFFFFF), // azul oscuro
+                                                height: 1.2, // control del interlineado
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            // Franja verde ocupando mitad de la columna
+                                            FractionallySizedBox(
+                                              widthFactor: 0.5, // la franja llega a la mitad de la columna
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                                decoration: BoxDecoration(
+                                                  color: Color(0xFF77B255), // verde
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: const Text(
+                                                  "a tu mascota",
+                                                  style: TextStyle(
+                                                    fontSize: 20, // más grande
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
+
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            // Texto descriptivo debajo
+                                            const Text(
+                                              "Durante todo el año,\n"
+                                                  "pagando menos respecto a\n"
+                                                  "los precios de los servicios\n"
+                                                  "independientes y accediendo a\n"
+                                                  "descuentos exclusivos.",
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                color: Colors.white, // gris oscuro
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 40),
                                       // Iconos arriba
                                       Padding(
                                         padding: const EdgeInsets.all(12.0),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment
-                                              .start,
-                                          children: const [
-                                            Icon(Icons.local_hotel,
-                                                color: Colors.white, size: 32),
-                                            SizedBox(height: 12),
-                                            Icon(Icons.medical_services,
-                                                color: Colors.white, size: 32),
-                                            SizedBox(height: 12),
-                                            Icon(
-                                                Icons.call, color: Colors.white,
-                                                size: 32),
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Imagen del perrito justo encima de la franja naranja
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(12),
+                                              child: Image.asset(
+                                                'lib/ui/img/Perro.png',
+                                                width: double.infinity,
+                                                height: 380,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+
+                                            //const SizedBox(height: 12),
+
+                                            // Franja naranja superior con icono y texto
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF39C12), // naranja
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: const [
+                                                  Icon(Icons.pets, color: Colors.white, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Coberturas Veterinarias',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            const SizedBox(height: 18),
+
+                                            // Lista de opciones con icono y texto al lado
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                                              child: Column(
+                                                children: [
+                                                  // Hospedaje
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        height: 42,
+                                                        width: 42,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white.withOpacity(0.08),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: const Icon(Icons.local_hotel, color: Colors.white, size: 28),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      const Expanded(
+                                                        child: Text(
+                                                          'Hospedaje',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 15,
+                                                            fontWeight: FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+
+                                                  const SizedBox(height: 12),
+
+                                                  // Red de beneficios
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        height: 42,
+                                                        width: 42,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white.withOpacity(0.08),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: const Icon(Icons.medical_services, color: Colors.white, size: 28),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      const Expanded(
+                                                        child: Text(
+                                                          'Red de beneficios',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 15,
+                                                            fontWeight: FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+
+                                                  const SizedBox(height: 12),
+
+                                                  // Atención Telefónica
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        height: 42,
+                                                        width: 42,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white.withOpacity(0.08),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: const Icon(Icons.call, color: Colors.white, size: 28),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      const Expanded(
+                                                        child: Text(
+                                                          'Atención Telefónica',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 15,
+                                                            fontWeight: FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+
+                                                  const SizedBox(height: 12),
+
+                                                  // Y mucho más (icono de huesito: uso Icons.pets por defecto)
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        height: 42,
+                                                        width: 42,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white.withOpacity(0.08),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: const Icon(Icons.pets, color: Colors.white, size: 28),
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      const Expanded(
+                                                        child: Text(
+                                                          'Y mucho más',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 15,
+                                                            fontWeight: FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            // Si tu Column está dentro de otro contenedor que requiere espacio flexible:
+                                            // const Spacer(),
                                           ],
                                         ),
                                       ),
@@ -1218,7 +1416,7 @@ class _FormPageState extends State<FormPage> {
                                           borderRadius: BorderRadius.circular(
                                               12),
                                           child: Image.asset(
-                                            'lib/ui/img/Perro.png',
+                                            'lib/ui/img/Gato.png',
                                             width: double.infinity,
                                             height: 350,
                                             fit: BoxFit.cover,
@@ -1243,7 +1441,6 @@ class _FormPageState extends State<FormPage> {
       ),
     );
   }
-
 
 // Función auxiliar responsive
   Widget _rowLabelFieldResponsive(String label, Widget field, bool isMobile) {
@@ -1280,7 +1477,6 @@ class _FormPageState extends State<FormPage> {
       );
     }
   }
-
   Widget _labelPill(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1298,124 +1494,143 @@ class _FormPageState extends State<FormPage> {
       ),
     );
   }
-
   void _showTermsDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Tratamiento de Datos Personales'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'OTTOKARE, conforme a lo dispuesto en la Ley Orgánica de Protección de Datos Personales (LOPDP), informa a los titulares que:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(color: Colors.black87, fontSize: 12),
-                  children: [
-                    TextSpan(
-                      text: '1. Datos personales que se recopilarán\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'Se podrán tratar las siguientes categorías:\n\n'
-                          '   • Datos identificativos: nombres, apellidos, cédula/pasaporte, dirección, teléfono, correo electrónico.\n\n'
-                          '   • Datos de pago: número de cuenta o tarjeta, historial de pagos.\n\n'
-                          '   • Datos relacionados con la mascota: nombre, especie, raza, edad, historial médico veterinario, características físicas, fotografías.\n\n'
-                          '   • Datos sensibles: información sobre la salud de la mascota.\n\n',
-                    ),
-                    TextSpan(
-                      text: '2. Finalidades del tratamiento\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'Los datos serán tratados con las siguientes finalidades:\n\n'
-                          '   • Gestionar la suscripción y prestación del servicio de asistencia para mascotas.\n\n'
-                          '   • Coordinar atención veterinaria, transporte o servicios complementarios conforme el certificado de cobertura.\n\n'
-                          '   • Realizar seguimiento y control de casos de asistencia.\n\n'
-                          '   • Gestionar pagos, facturación y cobranzas.\n\n'
-                          '   • Atender consultas, solicitudes o reclamos.\n\n'
-                          '   • Cumplir con obligaciones legales, contractuales o regulatorias.\n\n'
-                          '   • Enviar comunicaciones informativas o comerciales relacionadas con el servicio, siempre que el titular no haya ejercido su derecho de oposición.\n\n',
-                    ),
-                    TextSpan(
-                      text: '3. Base legal del tratamiento\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'El tratamiento se realiza sobre las siguientes bases legitimadoras:\n\n'
-                          '   • Que sea realizado por el responsable del tratamiento, por orden judicial u obligación legal.\n\n'
-                          '   • Para la ejecución de medidas precontractuales a petición del titular o para el cumplimiento de obligaciones contractuales.\n\n'
-                          '   • Para satisfacer un interés legítimo del responsable de tratamiento.\n\n',
-                    ),
-                    TextSpan(
-                      text: '4. Comunicación y almacenamiento de datos\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'Los datos podrán ser compartidos con proveedores, veterinarios, clínicas, aseguradoras, empresas de transporte o call centers que actúen como encargados del tratamiento, únicamente para el cumplimiento de las finalidades antes descritas.\n\n'
-                          'En caso de transferencias internacionales, se garantizará que el país de destino cuente con niveles adecuados de protección o que existan garantías contractuales suficientes.\n\n'
-                          'El almacenamiento podrá realizarse en servidores propios o en servicios de computación en la nube, con las medidas técnicas y organizativas necesarias para proteger la información.\n\n',
-                    ),
-                    TextSpan(
-                      text: '5. Plazo de conservación\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'En el caso de que se termine la relación contractual con los Titulares, OTTOKARE conservará los datos personales de estos por un período de tiempo razonable para permitir la defensa del Responsable del Tratamiento en caso de presentarse algún reclamo administrativo o judicial por él o en su contra con relación a la prestación de los servicios que ofrece. En todo caso, los datos personales serán tratados en la medida en que sean necesarios para satisfacer los fines para los cuales se recogieron, o para cumplir con cualquier requisito legal, por lo que el plazo podría prolongarse. En el supuesto de que la autoridad establezca plazos determinados, OTTOKARE se compromete a tratar los datos personales hasta el plazo máximo establecido por esta. OTTOKARE se compromete a que, en el supuesto de que no se requiera el tratamiento de los datos personales de los Titulares durante un periodo de tiempo razonable, este tomará todas las medidas de seguridad pertinentes para eliminar, bloquear, seudonimizar o anonimizar los datos personales.\n\n',
-                    ),
-                    TextSpan(
-                      text: '6. Derechos del titular\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'Para el ejercicio de cualquiera de los derechos aquí plasmados o reclamación única y exclusivamente sobre el tratamiento de datos personales, los Titulares deberán enviar una solicitud a la siguiente dirección electrónica: legal@mmhcloseness.com\n\n'
-                          'La solicitud deberá contener, al menos lo siguiente:\n\n'
-                          '   • Nombres y apellidos completos de los Titulares, número de cédula de identidad o pasaporte y dirección domiciliaria o electrónica para notificaciones. Cuando se actúa en calidad de representante legal, se hará constar también los datos del representado.\n\n'
-                          '   • La descripción clara y precisa del derecho que se busca ejercer y detalle de los datos personales en los cuales se busca ejercer el mismo, conforme la Ley Orgánica de Protección de Datos Personales.\n\n'
-                          '   • A la solicitud se acompañará los documentos que acrediten la identidad o, en su caso, la representación legal o convencional del titular.\n\n'
-                          'En caso de que la información constante en la solicitud requiera ser aclarecida o ampliada, OTTOKARE requerirá a los Titulares, por una sola vez y dentro del término de cinco días de recibida la solicitud, que la aclare o complete. Los Titulares contará con el término de diez días contados a partir del día siguiente en el que haya sido notificado con la solicitud de aclaración o ampliación para aclarar o completar la solicitud. Si los Titulares aclaran o completan la solicitud dentro del término mencionado, el Responsable del Tratamiento dará la debida atención a la solicitud, caso contrario, OTTOKARE se reserva el derecho de archivar la solicitud, para lo cual se notificará a los Titulares de este hecho con las razones de la decisión. En el caso de que se lo requiera, los Titulares podrán comunicarse directamente con la Autoridad de Protección de Datos Personales ecuatoriana.\n\n',
-                    ),
-                    TextSpan(
-                      text: '7. No entrega de datos personales, o datos erróneos o inexactos\n',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: 'Para el cumplimiento de cualquiera de los fines establecidos por OTTOKARE, los Titulares deberán entregar la información exacta y completa, caso contrario los servicios o solicitudes no podrán ser prestados de manera adecuada. Así mismo, OTTOKARE se reserva el derecho de no prestar el servicio o solicitudes a los Titulares, si los datos de estos no son entregados, o son entregados con errores, inexactos o incorrectos.',
-                    ),
-                  ],
+        backgroundColor: Colors.white, // Fondo blanco
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // esquinas suaves
+        title: const Text(
+          'Tratamiento de Datos Personales',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.6, // Ancho mediano
+          height: MediaQuery.of(context).size.height * 0.6, // Alto mediano
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'OTTOKARE, conforme a lo dispuesto en la Ley Orgánica de Protección de Datos Personales (LOPDP), informa a los titulares que:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  textAlign: TextAlign.justify,
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                RichText(
+                  textAlign: TextAlign.justify, // Justificación formal del texto
+                  text: const TextSpan(
+                    style: TextStyle(color: Colors.black87, fontSize: 14),
+                    children: [
+                      TextSpan(
+                        text: '1. Datos personales que se recopilarán\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'Se podrán tratar las siguientes categorías:\n\n'
+                            '   • Datos identificativos: nombres, apellidos, cédula/pasaporte, dirección, teléfono, correo electrónico.\n\n'
+                            '   • Datos de pago: número de cuenta o tarjeta, historial de pagos.\n\n'
+                            '   • Datos relacionados con la mascota: nombre, especie, raza, edad, historial médico veterinario, características físicas, fotografías.\n\n'
+                            '   • Datos sensibles: información sobre la salud de la mascota.\n\n',
+                      ),
+                      TextSpan(
+                        text: '2. Finalidades del tratamiento\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'Los datos serán tratados con las siguientes finalidades:\n\n'
+                            '   • Gestionar la suscripción y prestación del servicio de asistencia para mascotas.\n\n'
+                            '   • Coordinar atención veterinaria, transporte o servicios complementarios conforme el certificado de cobertura.\n\n'
+                            '   • Realizar seguimiento y control de casos de asistencia.\n\n'
+                            '   • Gestionar pagos, facturación y cobranzas.\n\n'
+                            '   • Atender consultas, solicitudes o reclamos.\n\n'
+                            '   • Cumplir con obligaciones legales, contractuales o regulatorias.\n\n'
+                            '   • Enviar comunicaciones informativas o comerciales relacionadas con el servicio, siempre que el titular no haya ejercido su derecho de oposición.\n\n',
+                      ),
+                      TextSpan(
+                        text: '3. Base legal del tratamiento\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'El tratamiento se realiza sobre las siguientes bases legitimadoras:\n\n'
+                            '   • Que sea realizado por el responsable del tratamiento, por orden judicial u obligación legal.\n\n'
+                            '   • Para la ejecución de medidas precontractuales a petición del titular o para el cumplimiento de obligaciones contractuales.\n\n'
+                            '   • Para satisfacer un interés legítimo del responsable de tratamiento.\n\n',
+                      ),
+                      TextSpan(
+                        text: '4. Comunicación y almacenamiento de datos\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'Los datos podrán ser compartidos con proveedores, veterinarios, clínicas, aseguradoras, empresas de transporte o call centers que actúen como encargados del tratamiento, únicamente para el cumplimiento de las finalidades antes descritas.\n\n'
+                            'En caso de transferencias internacionales, se garantizará que el país de destino cuente con niveles adecuados de protección o que existan garantías contractuales suficientes.\n\n'
+                            'El almacenamiento podrá realizarse en servidores propios o en servicios de computación en la nube, con las medidas técnicas y organizativas necesarias para proteger la información.\n\n',
+                      ),
+                      TextSpan(
+                        text: '5. Plazo de conservación\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'En el caso de que se termine la relación contractual con los Titulares, OTTOKARE conservará los datos personales de estos por un período de tiempo razonable para permitir la defensa del Responsable del Tratamiento en caso de presentarse algún reclamo administrativo o judicial por él o en su contra con relación a la prestación de los servicios que ofrece. En todo caso, los datos personales serán tratados en la medida en que sean necesarios para satisfacer los fines para los cuales se recogieron, o para cumplir con cualquier requisito legal, por lo que el plazo podría prolongarse. En el supuesto de que la autoridad establezca plazos determinados, OTTOKARE se compromete a tratar los datos personales hasta el plazo máximo establecido por esta. OTTOKARE se compromete a que, en el supuesto de que no se requiera el tratamiento de los datos personales de los Titulares durante un periodo de tiempo razonable, este tomará todas las medidas de seguridad pertinentes para eliminar, bloquear, seudonimizar o anonimizar los datos personales.\n\n',
+                      ),
+                      TextSpan(
+                        text: '6. Derechos del titular\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'Para el ejercicio de cualquiera de los derechos aquí plasmados o reclamación única y exclusivamente sobre el tratamiento de datos personales, los Titulares deberán enviar una solicitud a la siguiente dirección electrónica: legal@mmhcloseness.com\n\n'
+                            'La solicitud deberá contener, al menos lo siguiente:\n\n'
+                            '   • Nombres y apellidos completos de los Titulares, número de cédula de identidad o pasaporte y dirección domiciliaria o electrónica para notificaciones. Cuando se actúa en calidad de representante legal, se hará constar también los datos del representado.\n\n'
+                            '   • La descripción clara y precisa del derecho que se busca ejercer y detalle de los datos personales en los cuales se busca ejercer el mismo, conforme la Ley Orgánica de Protección de Datos Personales.\n\n'
+                            '   • A la solicitud se acompañará los documentos que acrediten la identidad o, en su caso, la representación legal o convencional del titular.\n\n'
+                            'En caso de que la información constante en la solicitud requiera ser aclarecida o ampliada, OTTOKARE requerirá a los Titulares, por una sola vez y dentro del término de cinco días de recibida la solicitud, que la aclare o complete. Los Titulares contará con el término de diez días contados a partir del día siguiente en el que haya sido notificado con la solicitud de aclaración o ampliación para aclarar o completar la solicitud. Si los Titulares aclaran o completan la solicitud dentro del término mencionado, el Responsable del Tratamiento dará la debida atención a la solicitud, caso contrario, OTTOKARE se reserva el derecho de archivar la solicitud, para lo cual se notificará a los Titulares de este hecho con las razones de la decisión. En el caso de que se lo requiera, los Titulares podrán comunicarse directamente con la Autoridad de Protección de Datos Personales ecuatoriana.\n\n',
+                      ),
+                      TextSpan(
+                        text: '7. No entrega de datos personales, o datos erróneos o inexactos\n\n',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text:
+                        'Para el cumplimiento de cualquiera de los fines establecidos por OTTOKARE, los Titulares deberán entregar la información exacta y completa, caso contrario los servicios o solicitudes no podrán ser prestados de manera adecuada. Así mismo, OTTOKARE se reserva el derecho de no prestar el servicio o solicitudes a los Titulares, si los datos de estos no son entregados, o son entregados con errores, inexactos o incorrectos.',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() => _acceptData = false);
-            },
-            child: const Text('Cancelar'),
-          ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green, // Botón verde
+              foregroundColor: Colors.white, // Texto blanco
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             onPressed: () {
               Navigator.of(context).pop();
               setState(() => _acceptData = true);
             },
-            child: const Text('Aceptar'),
+            child: const Text('Aceptar', style: TextStyle(fontSize: 14)),
           ),
         ],
         scrollable: true,
       ),
     );
   }
-
-
   Future<void> _enviarDatos() async {
     // Mostrar indicador de carga
     showDialog(
