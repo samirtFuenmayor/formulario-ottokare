@@ -11,6 +11,9 @@ import 'dart:convert'; // Para json.encode
 import 'package:http/http.dart' as http; // Para http.post
 import '../repository/form_repository.dart';
 import 'package:flutter/services.dart'; // Para FilteringTextInputFormatter
+import 'Succes_page.dart';
+import 'package:lottie/lottie.dart';
+import 'Error_page.dart';
 
 
 class FormPage extends StatefulWidget {
@@ -53,6 +56,12 @@ class _FormPageState extends State<FormPage> {
 
   // Lista para guardar mascotas temporalmente
   List<Map<String, String>> _mascotas = [];
+  bool? _hasDefect; // null, true = sí, false = no
+  TextEditingController _defectCtrl = TextEditingController();
+  final _emailFocus = FocusNode();
+  String? _emailError;
+
+
 
 
   final List<String> _genders = ['Hembra', 'Macho'];
@@ -525,13 +534,27 @@ class _FormPageState extends State<FormPage> {
                     Navigator.of(context).pop();
 
                     // Mostrar indicador de carga
+                    // showDialog(
+                    //   context: context,
+                    //   barrierDismissible: false,
+                    //   builder: (context) => const Center(
+                    //     child: CircularProgressIndicator(),
+                    //   ),
+                    // );
+                    // Mostrar animación de carga con Lottie
                     showDialog(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => const Center(
-                        child: CircularProgressIndicator(),
+                      builder: (context) => Center(
+                        child: Lottie.asset(
+                          'lib/ui/animation/Animacion_de_carga.json',
+                          width: 200,   // Ajusta tamaño
+                          height: 200,  // Ajusta tamaño
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     );
+
 
                     try {
                       // Enviar datos al backend
@@ -549,14 +572,19 @@ class _FormPageState extends State<FormPage> {
                       Navigator.of(context).pop();
 
                       // Mostrar mensaje de éxito
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(mensaje),
-                          backgroundColor: Colors.green,
-                          duration: const Duration(seconds: 3),
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(
+                      //     content: Text(mensaje),
+                      //     backgroundColor: Colors.green,
+                      //     duration: const Duration(seconds: 3),
+                      //   ),
+                      // );
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SuccessPage(),
                         ),
                       );
-
                       // Limpiar formulario
                       _limpiarFormularios();
 
@@ -796,10 +824,15 @@ class _FormPageState extends State<FormPage> {
                                           TextFormField(
                                             controller: _ownerNameCtrl,
                                             decoration: _fieldDecoration('Nombre'),
-                                            validator: (v) =>
-                                            (v == null || v.isEmpty)
-                                                ? 'Obligatorio'
-                                                : null,
+                                          //
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                                            ],
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Obligatorio';
+                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                                              return null;
+                                            },
                                           ),
                                           isMobile,
                                         ),
@@ -809,10 +842,14 @@ class _FormPageState extends State<FormPage> {
                                           TextFormField(
                                             controller: _ownerLastNameCtrl,
                                             decoration: _fieldDecoration('Apellido'),
-                                            validator: (v) =>
-                                            (v == null || v.isEmpty)
-                                                ? 'Obligatorio'
-                                                : null,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                                            ],
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Obligatorio';
+                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                                              return null;
+                                            },
                                           ),
                                           isMobile,
                                         ),
@@ -823,7 +860,9 @@ class _FormPageState extends State<FormPage> {
                                             controller: _idCtrl,
                                             decoration: _fieldDecoration('Cedula'),
                                             keyboardType: TextInputType.number,
-                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo números
+                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly,
+                                              LengthLimitingTextInputFormatter(10),
+                                            ], // Solo números
                                             validator: (v) {
                                               if (v == null || v.isEmpty) return 'Campo obligatorio';
                                               if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
@@ -839,7 +878,9 @@ class _FormPageState extends State<FormPage> {
                                             controller: _phoneCtrl,
                                             decoration: _fieldDecoration('Celular'),
                                             keyboardType: TextInputType.phone,
-                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Solo números
+                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly,
+                                              LengthLimitingTextInputFormatter(10),
+                                            ], // Solo números
                                             validator: (v) {
                                               if (v == null || v.isEmpty) return 'Campo obligatorio';
                                               if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
@@ -850,29 +891,49 @@ class _FormPageState extends State<FormPage> {
                                           isMobile,
                                         ),
                                         const SizedBox(height: 12),
+                                        // _rowLabelFieldResponsive(
+                                        //   'E-mail',
+                                        //   TextFormField(
+                                        //     controller: _emailCtrl,
+                                        //     decoration: _fieldDecoration('Correo Electronico'),
+                                        //     keyboardType: TextInputType.emailAddress,
+                                        //     validator: (v) {
+                                        //       if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                        //       if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
+                                        //         return 'Ingrese un email válido';
+                                        //       }
+                                        //       return null;
+                                        //     },
+                                        //   ),
+                                        //   isMobile,
+                                        // ),
                                         _rowLabelFieldResponsive(
                                           'E-mail',
                                           TextFormField(
                                             controller: _emailCtrl,
-                                            decoration: _fieldDecoration('Correo Electronico'),
+                                            focusNode: _emailFocus, // importante
                                             keyboardType: TextInputType.emailAddress,
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
-                                                return 'Ingrese un email válido';
-                                              }
-                                              return null;
-                                            },
+                                            decoration: _fieldDecoration('Correo Electrónico').copyWith(
+                                              errorText: _emailError, //  muestra error solo al perder foco
+                                            ),
                                           ),
                                           isMobile,
                                         ),
+
                                         const SizedBox(height: 12),
                                         _rowLabelFieldResponsive(
                                           'Ciudad',
                                           TextFormField(
                                             controller: _cityCtrl,
                                             decoration: _fieldDecoration('Ciudad'),
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                                            ],
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                                              return null;
+                                            },
                                           ),
                                           isMobile,
                                         ),
@@ -891,12 +952,60 @@ class _FormPageState extends State<FormPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 12),
+                                        //DATA TABLE PARA VISULAIZAR LAS MASCOTAS
+                                        if (_mascotas.isNotEmpty)
+                                          SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                                              child: SingleChildScrollView(
+                                                scrollDirection: Axis.vertical,
+                                                child: DataTable(
+                                                  columns: const [
+                                                    DataColumn(label: Text('Nombre')),
+                                                    DataColumn(label: Text('Especie')),
+                                                    DataColumn(label: Text('Raza')),
+                                                    DataColumn(label: Text('Color')),
+                                                    DataColumn(label: Text('Carnet')),
+                                                    DataColumn(label: Text('Acciones')),
+                                                  ],
+                                                  rows: _mascotas.map((m) {
+                                                    return DataRow(cells: [
+                                                      DataCell(Text(m['nombre']!)),
+                                                      DataCell(Text(m['species']!)),
+                                                      DataCell(Text(m['raza']!)),
+                                                      DataCell(Text(m['color']!)),
+                                                      DataCell(Text(m['carnet']!)),
+                                                      DataCell(
+                                                        IconButton(
+                                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                                          onPressed: () {
+                                                            setState(() {
+                                                              _mascotas.remove(m);
+                                                            });
+                                                          },
+                                                        ),
+                                                      ),
+                                                    ]);
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        const SizedBox(height: 12),
                                         _rowLabelFieldResponsive(
                                           'Nombre de la mascota',
                                           TextFormField(
                                             controller: _petNameCtrl,
                                             decoration: _fieldDecoration('Nombre de la Mascota'),
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                                            ],
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                                              return null;
+                                            },
                                           ),
                                           isMobile,
                                         ),
@@ -1015,17 +1124,79 @@ class _FormPageState extends State<FormPage> {
                                           TextFormField(
                                             controller: _petColorCtrl,
                                             decoration: _fieldDecoration('Coloque el color de su Mascota'),
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                                            ],
+                                            validator: (v) {
+                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                                              return null;
+                                            },
                                           ),
                                           isMobile,
                                         ),
                                         const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
+                                        // _rowLabelFieldResponsive(
+                                        //   'La mascota tiene algún defecto físico o enfermedad?',
+                                        //   TextFormField(
+                                        //     decoration: _fieldDecoration(
+                                        //         'Especifique'),
+                                        //     validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                        //   ),
+                                        //   isMobile,
+                                        // ),
+                                        // Variables de estado
+                                        // Widget
+                                          _rowLabelFieldResponsive(
                                           'La mascota tiene algún defecto físico o enfermedad?',
-                                          TextFormField(
-                                            decoration: _fieldDecoration(
-                                                'Especifique'),
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  // Checkbox Sí
+                                                  Expanded(
+                                                    child: RadioListTile<bool>(
+                                                      title: const Text('Sí'),
+                                                      value: true,
+                                                      groupValue: _hasDefect,
+                                                      onChanged: (val) {
+                                                        setState(() {
+                                                          _hasDefect = val;
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                  // Checkbox No
+                                                  Expanded(
+                                                    child: RadioListTile<bool>(
+                                                      title: const Text('No'),
+                                                      value: false,
+                                                      groupValue: _hasDefect,
+                                                      onChanged: (val) {
+                                                        setState(() {
+                                                          _hasDefect = val;
+                                                          _defectCtrl.clear(); // limpia si selecciona no
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              // Textarea solo si selecciona Sí
+                                              if (_hasDefect == true)
+                                                TextFormField(
+                                                  controller: _defectCtrl,
+                                                  maxLines: 4,
+                                                  decoration: _fieldDecoration('Especifique el defecto o enfermedad'),
+                                                  validator: (v) {
+                                                    if (_hasDefect == true && (v == null || v.isEmpty)) {
+                                                      return 'Campo obligatorio';
+                                                    }
+                                                    return null;
+                                                  },
+                                                ),
+                                            ],
                                           ),
                                           isMobile,
                                         ),
@@ -1087,7 +1258,7 @@ class _FormPageState extends State<FormPage> {
 
                                         // Checkbox
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.center, // Centrado vertical con el checkbox
                                           children: [
                                             Checkbox(
                                               value: _acceptData,
@@ -1152,24 +1323,16 @@ class _FormPageState extends State<FormPage> {
 
                                                   setState(() {
                                                     _mascotas.add({
-                                                      'nombre': _petNameCtrl
-                                                          .text,
-                                                      'raza': _selectedBreed ??
-                                                          '',
-                                                      'species': _selectedSpecies ??
-                                                          '',
-                                                      'gender': _selectedGender ??
-                                                          '',
-                                                      'color': _petColorCtrl
-                                                          .text,
-                                                      //'birth_date': birthDateStr! .toIso8601String(),
-                                                      'birth_date': _selectedBirthDate!
-                                                          .toIso8601String(),
-                                                      // ✅ correcto// <-- ahora es String
-                                                      'carnet': _petCarnetCtrl
-                                                          .text,
-                                                      'defect': '',
-                                                    });
+                                                      'nombre': _petNameCtrl.text,
+                                                      'raza': _selectedBreed ?? '',
+                                                      'species': _selectedSpecies ?? '',
+                                                      'gender': _selectedGender ?? '',
+                                                      'color': _petColorCtrl.text,
+                                                      'birth_date': _selectedBirthDate!.toIso8601String(),
+                                                      'carnet': _petCarnetCtrl.text,
+                                                      'defect': _hasDefect == true
+                                                          ? _defectCtrl.text
+                                                          : 'La mascota no tiene defectos',                                                    });
 
                                                     ScaffoldMessenger.of(context).showSnackBar(
                                                       const SnackBar(
@@ -1179,10 +1342,15 @@ class _FormPageState extends State<FormPage> {
                                                     );
 
                                                     // Limpiar campos
-                                                    // _petNameCtrl.clear();
-                                                    // _selectedSpecies = null;
-                                                    // _selectedBreed = null;
-                                                    // _birthDateCtrl.clear();
+                                                    _petNameCtrl.clear();
+                                                    _selectedGender = null;
+                                                    _selectedBreed = null;
+                                                    _selectedSpecies = null;
+                                                    _birthDateCtrl.clear();
+                                                    _selectedBirthDate = null;
+                                                    _petColorCtrl.clear();
+                                                    _hasDefect = null;
+                                                    _petCarnetCtrl.clear();
                                                   });
                                                 },
                                                 icon: const Icon(Icons.add),
@@ -1202,191 +1370,100 @@ class _FormPageState extends State<FormPage> {
                                         SizedBox(
                                           width: double.infinity,
                                           child: ElevatedButton(
-                                            onPressed: () {
+                                            onPressed: () async {
+                                              // Validaciones
                                               if (!_acceptData) {
-                                                ScaffoldMessenger
-                                                    .of(context)
-                                                    .showSnackBar(
+                                                ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(
-                                                      content: Text(
-                                                          'Debes aceptar el uso de datos')),
+                                                    content: Text('Debes aceptar el uso de datos'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
                                                 );
                                                 return;
                                               }
 
-                                              final double modalWidth = MediaQuery
-                                                  .of(context)
-                                                  .size
-                                                  .width < 800
-                                                  ? MediaQuery
-                                                  .of(context)
-                                                  .size
-                                                  .width * 0.9
-                                                  : 600;
+                                              // if (_formKey.currentState?.validate() != true) {
+                                              //   ScaffoldMessenger.of(context).showSnackBar(
+                                              //     const SnackBar(
+                                              //       content: Text('Completa todos los campos obligatorios'),
+                                              //       backgroundColor: Colors.red,
+                                              //     ),
+                                              //   );
+                                              //   return;
+                                              // }
 
+                                              if (_mascotas.isEmpty) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Debes agregar al menos una mascota'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              // Mostrar indicador de carga
                                               showDialog(
                                                 context: context,
-                                                builder: (context) =>
-                                                    Dialog(
-                                                      insetPadding: const EdgeInsets
-                                                          .all(16),
-                                                      child: Container(
-                                                        width: modalWidth,
-                                                        padding: const EdgeInsets
-                                                            .all(16),
-                                                        decoration: BoxDecoration(
-                                                          borderRadius: BorderRadius
-                                                              .circular(12),
-                                                        ),
-                                                        child: Column(
-                                                          mainAxisSize: MainAxisSize
-                                                              .min,
-                                                          children: [
-                                                            const Text(
-                                                              'Mascotas Registradas',
-                                                              style: TextStyle(
-                                                                  fontSize: 20,
-                                                                  fontWeight: FontWeight
-                                                                      .bold
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(
-                                                                height: 16),
-                                                            SingleChildScrollView(
-                                                              scrollDirection: Axis
-                                                                  .horizontal,
-                                                              child: ConstrainedBox(
-                                                                constraints: BoxConstraints(
-                                                                    maxWidth: 600),
-                                                                child: SingleChildScrollView(
-                                                                  scrollDirection: Axis
-                                                                      .vertical,
-                                                                  child: DataTable(
-                                                                    columns: const [
-                                                                      DataColumn(label: Text('Nombre')),
-                                                                      DataColumn(label: Text('Epecies')),
-                                                                      DataColumn(label: Text('Raza')),
-                                                                      DataColumn(label: Text('Carnet')),
-                                                                      DataColumn(label: Text('Acciones')),
-                                                                    ],
-                                                                    rows: _mascotas.map((m) =>
-                                                                          DataRow(cells: [
-                                                                            DataCell(Text(m['nombre']!)),
-                                                                            DataCell(Text(m['species']!)),
-                                                                            DataCell(Text(m['raza']!)),
-                                                                            DataCell(Text(m['carnet']!)),
-                                                                              DataCell(IconButton(icon: const Icon(Icons.delete, color: Colors.red),
-                                                                                  onPressed: () {
-                                                                                    setState(() {_mascotas.remove(m);
-                                                                                    });
-                                                                                    Navigator.of(context).pop();
-                                                                                    Future.delayed(Duration.zero, () {
-                                                                                      showDialog(context: context, builder: (_) =>
-                                                                                            buildMascotasDialog(
-                                                                                                context,
-                                                                                                modalWidth),
-                                                                                      );
-                                                                                    });
-                                                                                  },
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                    )
-                                                                        .toList(),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 20),
-                                                            Row(
-                                                              mainAxisAlignment: MainAxisAlignment.end,
-                                                              children: [
-                                                                TextButton(
-                                                                  onPressed: () {
-                                                                    Navigator.of(context).pop();
-                                                                  },
-                                                                  child: const Text('Cancelar'),
-                                                                ),
-                                                                const SizedBox(width: 12),
-                                                                ElevatedButton(
-                                                                  onPressed: () async {
-                                                                    // Validaciones antes de enviar
-                                                                    if (!_acceptData) {
-                                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                                        const SnackBar(
-                                                                          content: Text('Debes aceptar los términos y condiciones'),
-                                                                          backgroundColor: Colors.red,
-                                                                        ),
-                                                                      );
-                                                                      return;
-                                                                    }
-
-                                                                    if (_formKey.currentState?.validate() != true) {
-                                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                                        const SnackBar(
-                                                                          content: Text('Completa todos los campos obligatorios'),
-                                                                          backgroundColor: Colors.red,
-                                                                        ),
-                                                                      );
-                                                                      return;
-                                                                    }
-
-                                                                    if (_mascotas.isEmpty) {
-                                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                                        const SnackBar(
-                                                                          content: Text('Debes agregar al menos una mascota'),
-                                                                          backgroundColor: Colors.red,
-                                                                        ),
-                                                                      );
-                                                                      return;
-                                                                    }
-
-                                                                    // Cerrar el modal de mascotas
-                                                                    Navigator.of(context).pop();
-
-                                                                    // Enviar datos
-                                                                    await _enviarDatos();
-                                                                  },
-                                                                  style: ElevatedButton.styleFrom(
-                                                                    backgroundColor: const Color(0xFF074B5E),
-                                                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                                                    shape: RoundedRectangleBorder(
-                                                                      borderRadius: BorderRadius.circular(12),
-                                                                    ),
-                                                                  ),
-                                                                  child: const Text(
-                                                                    'Guardar',
-                                                                    style: TextStyle(
-                                                                      color: Colors.white,
-                                                                      fontSize: 16,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
+                                                barrierDismissible: false,
+                                                builder: (context) => Center(
+                                                  child: Lottie.asset(
+                                                    'lib/ui/animation/Animacion_de_carga.json',
+                                                    width: 200,   // Ajusta tamaño
+                                                    height: 200,  // Ajusta tamaño
+                                                    fit: BoxFit.contain,
+                                                  ),
+                                                ),
                                               );
+
+                                              try {
+                                                // Enviar datos al backend
+                                                final mensaje = await _formRepository.enviarDatos(
+                                                  nombre: _ownerNameCtrl.text,
+                                                  apellido: _ownerLastNameCtrl.text,
+                                                  cedula: _idCtrl.text,
+                                                  celular: _phoneCtrl.text,
+                                                  email: _emailCtrl.text,
+                                                  ciudad: _cityCtrl.text,
+                                                  mascotas: _mascotas,
+                                                );
+
+                                                // Cerrar indicador de carga
+                                                Navigator.of(context).pop();
+
+                                                // Mostrar mensaje de éxito
+                                                Navigator.pushReplacement(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => const SuccessPage(),
+                                                  ),
+                                                );
+
+                                                // Limpiar formulario
+                                                _limpiarFormularios();
+                                              } catch (e) {
+                                                Navigator.pushReplacement(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => const ErrorPage(),
+                                                  ),
+                                                );
+                                              }
                                             },
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(
-                                                  0xFF074B5E),
-                                              padding: const EdgeInsets
-                                                  .symmetric(vertical: 16),
+                                              backgroundColor: const Color(0xFF074B5E),
+                                              padding: const EdgeInsets.symmetric(vertical: 16),
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius
-                                                    .circular(12),
+                                                borderRadius: BorderRadius.circular(12),
                                               ),
                                             ),
-                                            child: const Text('Confirmar',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16)),
+                                            child: const Text(
+                                              'Confirmar',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -1908,5 +1985,25 @@ class _FormPageState extends State<FormPage> {
       );
     }
   }
+  @override
+  void initState() {
+    super.initState();
+
+    _emailFocus.addListener(() {
+      if (!_emailFocus.hasFocus) {
+        setState(() {
+          final email = _emailCtrl.text.trim();
+          if (email.isEmpty) {
+            _emailError = 'Campo obligatorio';
+          } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+            _emailError = 'Ingrese un email válido';
+          } else {
+            _emailError = null; // ✅ válido
+          }
+        });
+      }
+    });
+  }
+
 
 }

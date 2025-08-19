@@ -38,6 +38,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   file_picker: ^10.3.1
   flutter_svg: ^2.0.0+1
+  confetti: ^0.7.0
+  lottie: ^3.1.2
   #http: ^1.1.0
   flutter_localizations:
       sdk: flutter
@@ -67,6 +69,13 @@ flutter:
     - lib/ui/img/Perro.png
     - lib/ui/img/Logo.png
     - lib/ui/img/Gato.png
+    - lib/ui/animation/dog.json
+    - lib/ui/animation/cat.json
+    - lib/ui/animation/Confetti.json
+    - lib/ui/animation/Animacion_de_carga.json
+    - lib/ui/animation/error.json
+    - lib/ui/animation/error_dog.json
+
 
   uses-material-design: true
   generate: true
