@@ -34,7 +34,7 @@ class FormRepository {
             "name": pet['species'] ?? "dog",
             "breed": {"name": pet['raza'] ?? ""},
             "color": pet['color'] ?? "",
-            "physical_defect": pet['defecto'] ?? "",
+            "physical_defect": pet['defect'] ?? "La mascota no tiene defectos",
           },
           "birth_date": pet['birth_date'] != null
               ? (pet['birth_date'] is DateTime

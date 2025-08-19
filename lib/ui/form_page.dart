@@ -1,4 +1,6 @@
 // lib/pages/form_page.dart
+import 'dart:js_interop';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/form_bloc.dart';
@@ -14,6 +16,7 @@ import 'package:flutter/services.dart'; // Para FilteringTextInputFormatter
 import 'Succes_page.dart';
 import 'package:lottie/lottie.dart';
 import 'Error_page.dart';
+
 
 
 class FormPage extends StatefulWidget {
@@ -378,7 +381,9 @@ class _FormPageState extends State<FormPage> {
             "name": pet['species'] ?? _selectedSpecies,
             "breed": {"name": pet['raza'] ?? ""},
             "color": pet['color'] ?? _petColorCtrl.text,
-            "physical_defect": pet['defect'] ?? ""
+            "physical_defect": _hasDefect == true
+                ? _defectCtrl.text // toma el valor del textarea
+                : "La mascota no tiene defectos",
           },
           "birth_date": pet['birth_date'] != null &&
               pet['birth_date'] is DateTime
@@ -1286,84 +1291,84 @@ class _FormPageState extends State<FormPage> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 18),
-
-                                        // Botón agregar mascota
-
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: ElevatedButton.icon(
-                                                onPressed: () {
-                                                  if (_petNameCtrl.text
-                                                      .isEmpty ||
-                                                      _selectedBreed == null ||
-                                                      _selectedBirthDate ==
-                                                          null) {
-
-                                                    ScaffoldMessenger.of(
-                                                        context).showSnackBar(
-                                                      const SnackBar(
-                                                          content: Text(
-                                                              'Complete todos los datos del formulario')),
-                                                    );
-                                                    return;
-                                                  }
-
-                                                  // Convertimos DateTime a String (dd/MM/yyyy)
-                                                  final birthDateStr =
-                                                      "${_selectedBirthDate!.day
-                                                      .toString().padLeft(
-                                                      2, '0')}/"
-                                                      "${_selectedBirthDate!
-                                                      .month.toString().padLeft(
-                                                      2, '0')}/"
-                                                      "${_selectedBirthDate!
-                                                      .year}";
-
-                                                  setState(() {
-                                                    _mascotas.add({
-                                                      'nombre': _petNameCtrl.text,
-                                                      'raza': _selectedBreed ?? '',
-                                                      'species': _selectedSpecies ?? '',
-                                                      'gender': _selectedGender ?? '',
-                                                      'color': _petColorCtrl.text,
-                                                      'birth_date': _selectedBirthDate!.toIso8601String(),
-                                                      'carnet': _petCarnetCtrl.text,
-                                                      'defect': _hasDefect == true
-                                                          ? _defectCtrl.text
-                                                          : 'La mascota no tiene defectos',                                                    });
-
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Mascota agregada correctamente'),
-                                                        backgroundColor: Colors.green,
-                                                      ),
-                                                    );
-
-                                                    // Limpiar campos
-                                                    _petNameCtrl.clear();
-                                                    _selectedGender = null;
-                                                    _selectedBreed = null;
-                                                    _selectedSpecies = null;
-                                                    _birthDateCtrl.clear();
-                                                    _selectedBirthDate = null;
-                                                    _petColorCtrl.clear();
-                                                    _hasDefect = null;
-                                                    _petCarnetCtrl.clear();
-                                                  });
-                                                },
-                                                icon: const Icon(Icons.add),
-                                                label: const Text(
-                                                    'Agregar Mascota'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.green,
-                                                  foregroundColor: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        // const SizedBox(height: 18),
+                                        //
+                                        // // Botón agregar mascota
+                                        //
+                                        // Row(
+                                        //   children: [
+                                        //     Expanded(
+                                        //       child: ElevatedButton.icon(
+                                        //         onPressed: () {
+                                        //           if (_petNameCtrl.text
+                                        //               .isEmpty ||
+                                        //               _selectedBreed == null ||
+                                        //               _selectedBirthDate ==
+                                        //                   null) {
+                                        //
+                                        //             ScaffoldMessenger.of(
+                                        //                 context).showSnackBar(
+                                        //               const SnackBar(
+                                        //                   content: Text(
+                                        //                       'Complete todos los datos del formulario')),
+                                        //             );
+                                        //             return;
+                                        //           }
+                                        //
+                                        //           // Convertimos DateTime a String (dd/MM/yyyy)
+                                        //           final birthDateStr =
+                                        //               "${_selectedBirthDate!.day
+                                        //               .toString().padLeft(
+                                        //               2, '0')}/"
+                                        //               "${_selectedBirthDate!
+                                        //               .month.toString().padLeft(
+                                        //               2, '0')}/"
+                                        //               "${_selectedBirthDate!
+                                        //               .year}";
+                                        //
+                                        //           setState(() {
+                                        //             _mascotas.add({
+                                        //               'nombre': _petNameCtrl.text,
+                                        //               'raza': _selectedBreed ?? '',
+                                        //               'species': _selectedSpecies ?? '',
+                                        //               'gender': _selectedGender ?? '',
+                                        //               'color': _petColorCtrl.text,
+                                        //               'birth_date': _selectedBirthDate!.toIso8601String(),
+                                        //               'carnet': _petCarnetCtrl.text,
+                                        //               'defect': _hasDefect == true
+                                        //                   ? _defectCtrl.text
+                                        //                   : 'La mascota no tiene defectos',                                                    });
+                                        //
+                                        //             ScaffoldMessenger.of(context).showSnackBar(
+                                        //               const SnackBar(
+                                        //                 content: Text('Mascota agregada correctamente'),
+                                        //                 backgroundColor: Colors.green,
+                                        //               ),
+                                        //             );
+                                        //
+                                        //             // Limpiar campos
+                                        //             _petNameCtrl.clear();
+                                        //             _selectedGender = null;
+                                        //             _selectedBreed = null;
+                                        //             _selectedSpecies = null;
+                                        //             _birthDateCtrl.clear();
+                                        //             _selectedBirthDate = null;
+                                        //             _petColorCtrl.clear();
+                                        //             _hasDefect = null;
+                                        //             _petCarnetCtrl.clear();
+                                        //           });
+                                        //         },
+                                        //         icon: const Icon(Icons.add),
+                                        //         label: const Text(
+                                        //             'Agregar Mascota'),
+                                        //         style: ElevatedButton.styleFrom(
+                                        //           backgroundColor: Colors.green,
+                                        //           foregroundColor: Colors.white,
+                                        //         ),
+                                        //       ),
+                                        //     ),
+                                        //   ],
+                                        // ),
                                         const SizedBox(height: 12),
 
                                         // Botón Confirmar y modal de mascotas
@@ -1371,7 +1376,7 @@ class _FormPageState extends State<FormPage> {
                                           width: double.infinity,
                                           child: ElevatedButton(
                                             onPressed: () async {
-                                              // Validaciones
+                                              // Validaciones del formulario completo
                                               if (!_acceptData) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(
@@ -1382,20 +1387,28 @@ class _FormPageState extends State<FormPage> {
                                                 return;
                                               }
 
-                                              // if (_formKey.currentState?.validate() != true) {
-                                              //   ScaffoldMessenger.of(context).showSnackBar(
-                                              //     const SnackBar(
-                                              //       content: Text('Completa todos los campos obligatorios'),
-                                              //       backgroundColor: Colors.red,
-                                              //     ),
-                                              //   );
-                                              //   return;
-                                              // }
-
-                                              if (_mascotas.isEmpty) {
+                                              if (_formKey.currentState?.validate() != true) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(
-                                                    content: Text('Debes agregar al menos una mascota'),
+                                                    content: Text('Completa todos los campos obligatorios'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              // Validación adicional de campos de mascota
+                                              if (_petNameCtrl.text.isEmpty ||
+                                                  _selectedBreed == null ||
+                                                  _selectedSpecies == null ||
+                                                  _selectedGender == null ||
+                                                  _selectedBirthDate == null ||
+                                                  _petColorCtrl.text.isEmpty ||
+                                                  _petCarnetCtrl.text.isEmpty ||
+                                                  (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Completa todos los datos de la mascota'),
                                                     backgroundColor: Colors.red,
                                                   ),
                                                 );
@@ -1409,14 +1422,19 @@ class _FormPageState extends State<FormPage> {
                                                 builder: (context) => Center(
                                                   child: Lottie.asset(
                                                     'lib/ui/animation/Animacion_de_carga.json',
-                                                    width: 200,   // Ajusta tamaño
-                                                    height: 200,  // Ajusta tamaño
+                                                    width: 200,
+                                                    height: 200,
                                                     fit: BoxFit.contain,
                                                   ),
                                                 ),
                                               );
 
                                               try {
+                                                // Convertimos fecha a String
+                                                final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
+                                                    "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
+                                                    "${_selectedBirthDate!.year}";
+
                                                 // Enviar datos al backend
                                                 final mensaje = await _formRepository.enviarDatos(
                                                   nombre: _ownerNameCtrl.text,
@@ -1425,18 +1443,26 @@ class _FormPageState extends State<FormPage> {
                                                   celular: _phoneCtrl.text,
                                                   email: _emailCtrl.text,
                                                   ciudad: _cityCtrl.text,
-                                                  mascotas: _mascotas,
+                                                  mascotas: [
+                                                    {
+                                                      'nombre': _petNameCtrl.text,
+                                                      'raza': _selectedBreed!,
+                                                      'species': _selectedSpecies!,
+                                                      'gender': _selectedGender!,
+                                                      'color': _petColorCtrl.text,
+                                                      'birth_date': _selectedBirthDate!.toIso8601String(),
+                                                      'carnet': _petCarnetCtrl.text,
+                                                      'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
+                                                    }
+                                                  ],
                                                 );
 
-                                                // Cerrar indicador de carga
-                                                Navigator.of(context).pop();
+                                                Navigator.of(context).pop(); // cerrar loader
 
-                                                // Mostrar mensaje de éxito
+                                                // Ir a página de éxito
                                                 Navigator.pushReplacement(
                                                   context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => const SuccessPage(),
-                                                  ),
+                                                  MaterialPageRoute(builder: (_) => const SuccessPage()),
                                                 );
 
                                                 // Limpiar formulario
@@ -1444,9 +1470,7 @@ class _FormPageState extends State<FormPage> {
                                               } catch (e) {
                                                 Navigator.pushReplacement(
                                                   context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => const ErrorPage(),
-                                                  ),
+                                                  MaterialPageRoute(builder: (_) => const ErrorPage()),
                                                 );
                                               }
                                             },
@@ -1459,13 +1483,11 @@ class _FormPageState extends State<FormPage> {
                                             ),
                                             child: const Text(
                                               'Confirmar',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                              ),
+                                              style: TextStyle(color: Colors.white, fontSize: 16),
                                             ),
                                           ),
                                         ),
+
                                       ],
                                     ),
                                   ),
