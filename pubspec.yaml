@@ -40,9 +40,11 @@ dependencies:
   flutter_svg: ^2.0.0+1
   confetti: ^0.7.0
   lottie: ^3.1.2
+  google_fonts: ^4.0.4 # Añade esta línea
   #http: ^1.1.0
   flutter_localizations:
       sdk: flutter
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
@@ -75,6 +77,9 @@ flutter:
     - lib/ui/animation/Animacion_de_carga.json
     - lib/ui/animation/error.json
     - lib/ui/animation/error_dog.json
+    - lib/ui/img/Logo1.png
+    - lib/ui/img/guardad.png
+    - lib/ui/img/diseño.png
 
 
   uses-material-design: true

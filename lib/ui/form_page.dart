@@ -44,7 +44,7 @@ class _FormPageState extends State<FormPage> {
   final TextEditingController _petBreedCtrl = TextEditingController();
   final TextEditingController _petSpeciesCtrl = TextEditingController();
   final TextEditingController _petColorCtrl = TextEditingController();
-  final TextEditingController _petCarnetCtrl = TextEditingController();
+  //final TextEditingController _petCarnetCtrl = TextEditingController();
 
   // Age fields
   final TextEditingController _ageDayCtrl = TextEditingController();
@@ -53,14 +53,18 @@ class _FormPageState extends State<FormPage> {
   DateTime? _selectedBirthDate; // Nueva variable
   // Generar controladores y variables
   final TextEditingController _birthDateCtrl = TextEditingController();
+
   String? _selectedGender;
   String? _selectedSpecies;
   String? _selectedBreed;
+  bool? _hasCarnet; // null, true = Sí, false = No
+  TextEditingController _petCarnetCtrl = TextEditingController();
 
   // Lista para guardar mascotas temporalmente
   List<Map<String, String>> _mascotas = [];
   bool? _hasDefect; // null, true = sí, false = no
   TextEditingController _defectCtrl = TextEditingController();
+  final FocusNode _phoneFocusNode = FocusNode();
   final _emailFocus = FocusNode();
   String? _emailError;
 
@@ -327,6 +331,8 @@ class _FormPageState extends State<FormPage> {
     _ageYearCtrl.dispose();
 
     super.dispose();
+
+
   }
 
   Future<void> _pickFile() async {
@@ -389,7 +395,9 @@ class _FormPageState extends State<FormPage> {
               pet['birth_date'] is DateTime
               ? (pet['birth_date'] as DateTime).toIso8601String()
               : null, // ISO completo: 2020-12-31T00:00:00
-          "identification": pet['carnet'] ?? _petCarnetCtrl.text
+          'carnet': _hasCarnet == false
+              ? "No tendrá cobertura hasta que tenga carnet"
+              : _petCarnetCtrl.text,
         };
       }).toList(),
     };
@@ -587,7 +595,10 @@ class _FormPageState extends State<FormPage> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const SuccessPage(),
+                          builder: (_) => SuccessPage(
+                            nombre: _ownerNameCtrl.text,
+                            mascota: _petNameCtrl.text,
+                          ),
                         ),
                       );
                       // Limpiar formulario
@@ -645,6 +656,7 @@ class _FormPageState extends State<FormPage> {
       _petCarnetCtrl.clear();
       _photoFile = null;
       _acceptData = false;
+      //_phoneFocusNode.dispose();
     });
   }
 
@@ -653,6 +665,7 @@ class _FormPageState extends State<FormPage> {
   Widget build(BuildContext context) {
     const Color headerBlue = Color(0xFF0A5970); // Azul oscuro original
     const Color backgroundTurquoise = Color(0xFF08AFC0);
+
     //const Color headerBlue = Color(0xFF0A5970);
     final isMobile = MediaQuery
         .of(context)
@@ -863,36 +876,39 @@ class _FormPageState extends State<FormPage> {
                                           'Cédula',
                                           TextFormField(
                                             controller: _idCtrl,
-                                            decoration: _fieldDecoration('Cedula'),
+                                            decoration: _fieldDecoration('Cédula'),
                                             keyboardType: TextInputType.number,
-                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.digitsOnly,
                                               LengthLimitingTextInputFormatter(10),
-                                            ], // Solo números
+                                            ],
                                             validator: (v) {
                                               if (v == null || v.isEmpty) return 'Campo obligatorio';
                                               if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                                              if (v.length != 10) return 'Debe tener 10 dígitos';
                                               return null;
                                             },
                                           ),
                                           isMobile,
                                         ),
                                         const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Celular',
-                                          TextFormField(
-                                            controller: _phoneCtrl,
-                                            decoration: _fieldDecoration('Celular'),
-                                            keyboardType: TextInputType.phone,
-                                            inputFormatters: [FilteringTextInputFormatter.digitsOnly,
-                                              LengthLimitingTextInputFormatter(10),
-                                            ], // Solo números
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                              if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
-                                              if (v.length < 10) return 'Mínimo 10 dígitos';
-                                              return null;
-                                            },
-                                          ),
+                                            _rowLabelFieldResponsive(
+                                              'Celular',
+                                              TextFormField(
+                                                controller: _phoneCtrl,
+                                                decoration: _fieldDecoration('Celular'),
+                                                keyboardType: TextInputType.phone,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.digitsOnly,
+                                                  LengthLimitingTextInputFormatter(10),
+                                                ],
+                                                validator: (v) {
+                                                  if (v == null || v.isEmpty) return 'Campo obligatorio';
+                                                  if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                                                  if (v.length != 10) return 'Debe tener 10 dígitos';
+                                                  return null;
+                                                },
+                                              ),
                                           isMobile,
                                         ),
                                         const SizedBox(height: 12),
@@ -1206,12 +1222,53 @@ class _FormPageState extends State<FormPage> {
                                           isMobile,
                                         ),
                                         const SizedBox(height: 12),
+                                        // _rowLabelFieldResponsive(
+                                        //   'Carnet',
+                                        //   TextFormField(
+                                        //     controller: _petCarnetCtrl,
+                                        //     decoration: _fieldDecoration('Digite el numero de Carnet'),
+                                        //     validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                        //   ),
+                                        //   isMobile,
+                                        // ),
                                         _rowLabelFieldResponsive(
                                           'Carnet',
-                                          TextFormField(
-                                            controller: _petCarnetCtrl,
-                                            decoration: _fieldDecoration('Digite el numero de Carnet'),
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              DropdownButtonFormField<bool>(
+                                                value: _hasCarnet,
+                                                decoration: _fieldDecoration('¿Tiene carnet?'),
+                                                items: const [
+                                                  DropdownMenuItem(value: true, child: Text('Sí')),
+                                                  DropdownMenuItem(value: false, child: Text('No')),
+                                                ],
+                                                onChanged: (val) {
+                                                  setState(() {
+                                                    _hasCarnet = val;
+                                                    if (_hasCarnet == false) {
+                                                      _petCarnetCtrl.text = "No tendrá cobertura hasta que tenga carnet";
+                                                    } else {
+                                                      _petCarnetCtrl.clear();
+                                                    }
+                                                  });
+                                                },
+                                                validator: (v) => v == null ? 'Campo obligatorio' : null,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              // Solo muestra el campo de texto si seleccionó Sí
+                                              if (_hasCarnet == true)
+                                                TextFormField(
+                                                  controller: _petCarnetCtrl,
+                                                  decoration: _fieldDecoration('Digite el número de carnet'),
+                                                  validator: (v) {
+                                                    if (_hasCarnet == true && (v == null || v.isEmpty)) {
+                                                      return 'Campo obligatorio';
+                                                    }
+                                                    return null;
+                                                  },
+                                                ),
+                                            ],
                                           ),
                                           isMobile,
                                         ),
@@ -1291,84 +1348,7 @@ class _FormPageState extends State<FormPage> {
                                             ),
                                           ],
                                         ),
-                                        // const SizedBox(height: 18),
-                                        //
-                                        // // Botón agregar mascota
-                                        //
-                                        // Row(
-                                        //   children: [
-                                        //     Expanded(
-                                        //       child: ElevatedButton.icon(
-                                        //         onPressed: () {
-                                        //           if (_petNameCtrl.text
-                                        //               .isEmpty ||
-                                        //               _selectedBreed == null ||
-                                        //               _selectedBirthDate ==
-                                        //                   null) {
-                                        //
-                                        //             ScaffoldMessenger.of(
-                                        //                 context).showSnackBar(
-                                        //               const SnackBar(
-                                        //                   content: Text(
-                                        //                       'Complete todos los datos del formulario')),
-                                        //             );
-                                        //             return;
-                                        //           }
-                                        //
-                                        //           // Convertimos DateTime a String (dd/MM/yyyy)
-                                        //           final birthDateStr =
-                                        //               "${_selectedBirthDate!.day
-                                        //               .toString().padLeft(
-                                        //               2, '0')}/"
-                                        //               "${_selectedBirthDate!
-                                        //               .month.toString().padLeft(
-                                        //               2, '0')}/"
-                                        //               "${_selectedBirthDate!
-                                        //               .year}";
-                                        //
-                                        //           setState(() {
-                                        //             _mascotas.add({
-                                        //               'nombre': _petNameCtrl.text,
-                                        //               'raza': _selectedBreed ?? '',
-                                        //               'species': _selectedSpecies ?? '',
-                                        //               'gender': _selectedGender ?? '',
-                                        //               'color': _petColorCtrl.text,
-                                        //               'birth_date': _selectedBirthDate!.toIso8601String(),
-                                        //               'carnet': _petCarnetCtrl.text,
-                                        //               'defect': _hasDefect == true
-                                        //                   ? _defectCtrl.text
-                                        //                   : 'La mascota no tiene defectos',                                                    });
-                                        //
-                                        //             ScaffoldMessenger.of(context).showSnackBar(
-                                        //               const SnackBar(
-                                        //                 content: Text('Mascota agregada correctamente'),
-                                        //                 backgroundColor: Colors.green,
-                                        //               ),
-                                        //             );
-                                        //
-                                        //             // Limpiar campos
-                                        //             _petNameCtrl.clear();
-                                        //             _selectedGender = null;
-                                        //             _selectedBreed = null;
-                                        //             _selectedSpecies = null;
-                                        //             _birthDateCtrl.clear();
-                                        //             _selectedBirthDate = null;
-                                        //             _petColorCtrl.clear();
-                                        //             _hasDefect = null;
-                                        //             _petCarnetCtrl.clear();
-                                        //           });
-                                        //         },
-                                        //         icon: const Icon(Icons.add),
-                                        //         label: const Text(
-                                        //             'Agregar Mascota'),
-                                        //         style: ElevatedButton.styleFrom(
-                                        //           backgroundColor: Colors.green,
-                                        //           foregroundColor: Colors.white,
-                                        //         ),
-                                        //       ),
-                                        //     ),
-                                        //   ],
-                                        // ),
+
                                         const SizedBox(height: 12),
 
                                         // Botón Confirmar y modal de mascotas
@@ -1386,11 +1366,61 @@ class _FormPageState extends State<FormPage> {
                                                 );
                                                 return;
                                               }
+                                              // Validar cédula
+                                              if (_idCtrl.text.length != 10) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('La cédula debe tener 10 dígitos'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              // Validar celular
+                                              if (_phoneCtrl.text.length != 10) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('El celular debe tener 10 dígitos'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
 
                                               if (_formKey.currentState?.validate() != true) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(
                                                     content: Text('Completa todos los campos obligatorios'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+                                              // Validar correo
+                                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                              if (!emailRegex.hasMatch(_emailCtrl.text)) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Ingresa un correo electrónico válido'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+                                              if (_hasCarnet == null) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Selecciona si la mascota tiene carnet'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+                                              if (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Debes ingresar el número de carnet'),
                                                     backgroundColor: Colors.red,
                                                   ),
                                                 );
@@ -1451,22 +1481,35 @@ class _FormPageState extends State<FormPage> {
                                                       'gender': _selectedGender!,
                                                       'color': _petColorCtrl.text,
                                                       'birth_date': _selectedBirthDate!.toIso8601String(),
-                                                      'carnet': _petCarnetCtrl.text,
+                                                      'carnet': _hasCarnet == false
+                                                          ? "No tendrá cobertura hasta que tenga carnet"
+                                                          : _petCarnetCtrl.text,
                                                       'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
                                                     }
                                                   ],
                                                 );
 
                                                 Navigator.of(context).pop(); // cerrar loader
-
+                                                final nombreTemp = _ownerNameCtrl.text;
+                                                final mascotaTemp = _petNameCtrl.text;
+                                                _limpiarFormularios();
                                                 // Ir a página de éxito
                                                 Navigator.pushReplacement(
                                                   context,
-                                                  MaterialPageRoute(builder: (_) => const SuccessPage()),
+                                                  MaterialPageRoute(
+                                                    builder: (_) => SuccessPage(
+                                                      nombre: nombreTemp,
+                                                      mascota: mascotaTemp,
+                                                    ),
+                                                  ),
                                                 );
+                                                print("Nombre: ${_ownerNameCtrl.text}");
+                                                print("Mascota: ${_petNameCtrl.text}");
 
                                                 // Limpiar formulario
-                                                _limpiarFormularios();
+
+                                                print("Nombre1: ${_ownerNameCtrl.text}");
+                                                print("Mascota2: ${_petNameCtrl.text}");
                                               } catch (e) {
                                                 Navigator.pushReplacement(
                                                   context,
@@ -1755,7 +1798,6 @@ class _FormPageState extends State<FormPage> {
                                   ),
                                 ),
                               ),
-
                           ],
                         ),
                       ),
@@ -1822,144 +1864,294 @@ class _FormPageState extends State<FormPage> {
       ),
     );
   }
+// Si quieres la fuente igual que el PDF, agrega google_fonts a pubspec y descomenta los import/uso.
+// import 'package:google_fonts/google_fonts.dart';
+
   void _showTermsDialog(BuildContext context) {
+    const Color pageWhite = Colors.white;
+    const Color titleBlue = Color(0xFF0B7A95);
+    const Color bodyBlue = Color(0xFF0B5E6C);
+
+    const double logoWidth = 60; // ajustable
+    const double contentWidthFactor = 0.62;
+    final double paperMaxWidth = MediaQuery.of(context).size.width * 0.92;
+
+    Widget _bullet(String text) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 6, right: 10),
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: titleBlue,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 15.0,
+                  color: bodyBlue,
+                  height: 1.48,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.justify,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget _numberedSection(int number, String heading, List<String> items) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$number. ',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: titleBlue,
+                    ),
+                  ),
+                  TextSpan(
+                    text: heading,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: titleBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (items.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: items.map((it) => _bullet(it)).toList(),
+              ),
+          ],
+        ),
+      );
+    }
+
+    final String intro =
+        'OTTOKARE, conforme a lo dispuesto en la Ley Orgánica de Protección de Datos Personales (LOPDP), informa a los titulares que:';
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white, // Fondo blanco
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // esquinas suaves
-        title: const Text(
-          'Tratamiento de Datos Personales',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.6, // Ancho mediano
-          height: MediaQuery.of(context).size.height * 0.6, // Alto mediano
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'OTTOKARE, conforme a lo dispuesto en la Ley Orgánica de Protección de Datos Personales (LOPDP), informa a los titulares que:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  textAlign: TextAlign.justify,
-                ),
-                const SizedBox(height: 16),
-                RichText(
-                  textAlign: TextAlign.justify, // Justificación formal del texto
-                  text: const TextSpan(
-                    style: TextStyle(color: Colors.black87, fontSize: 14),
-                    children: [
-                      TextSpan(
-                        text: '1. Datos personales que se recopilarán\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'Se podrán tratar las siguientes categorías:\n\n'
-                            '   • Datos identificativos: nombres, apellidos, cédula/pasaporte, dirección, teléfono, correo electrónico.\n\n'
-                            '   • Datos de pago: número de cuenta o tarjeta, historial de pagos.\n\n'
-                            '   • Datos relacionados con la mascota: nombre, especie, raza, edad, historial médico veterinario, características físicas, fotografías.\n\n'
-                            '   • Datos sensibles: información sobre la salud de la mascota.\n\n',
-                      ),
-                      TextSpan(
-                        text: '2. Finalidades del tratamiento\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'Los datos serán tratados con las siguientes finalidades:\n\n'
-                            '   • Gestionar la suscripción y prestación del servicio de asistencia para mascotas.\n\n'
-                            '   • Coordinar atención veterinaria, transporte o servicios complementarios conforme el certificado de cobertura.\n\n'
-                            '   • Realizar seguimiento y control de casos de asistencia.\n\n'
-                            '   • Gestionar pagos, facturación y cobranzas.\n\n'
-                            '   • Atender consultas, solicitudes o reclamos.\n\n'
-                            '   • Cumplir con obligaciones legales, contractuales o regulatorias.\n\n'
-                            '   • Enviar comunicaciones informativas o comerciales relacionadas con el servicio, siempre que el titular no haya ejercido su derecho de oposición.\n\n',
-                      ),
-                      TextSpan(
-                        text: '3. Base legal del tratamiento\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'El tratamiento se realiza sobre las siguientes bases legitimadoras:\n\n'
-                            '   • Que sea realizado por el responsable del tratamiento, por orden judicial u obligación legal.\n\n'
-                            '   • Para la ejecución de medidas precontractuales a petición del titular o para el cumplimiento de obligaciones contractuales.\n\n'
-                            '   • Para satisfacer un interés legítimo del responsable de tratamiento.\n\n',
-                      ),
-                      TextSpan(
-                        text: '4. Comunicación y almacenamiento de datos\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'Los datos podrán ser compartidos con proveedores, veterinarios, clínicas, aseguradoras, empresas de transporte o call centers que actúen como encargados del tratamiento, únicamente para el cumplimiento de las finalidades antes descritas.\n\n'
-                            'En caso de transferencias internacionales, se garantizará que el país de destino cuente con niveles adecuados de protección o que existan garantías contractuales suficientes.\n\n'
-                            'El almacenamiento podrá realizarse en servidores propios o en servicios de computación en la nube, con las medidas técnicas y organizativas necesarias para proteger la información.\n\n',
-                      ),
-                      TextSpan(
-                        text: '5. Plazo de conservación\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'En el caso de que se termine la relación contractual con los Titulares, OTTOKARE conservará los datos personales de estos por un período de tiempo razonable para permitir la defensa del Responsable del Tratamiento en caso de presentarse algún reclamo administrativo o judicial por él o en su contra con relación a la prestación de los servicios que ofrece. En todo caso, los datos personales serán tratados en la medida en que sean necesarios para satisfacer los fines para los cuales se recogieron, o para cumplir con cualquier requisito legal, por lo que el plazo podría prolongarse. En el supuesto de que la autoridad establezca plazos determinados, OTTOKARE se compromete a tratar los datos personales hasta el plazo máximo establecido por esta. OTTOKARE se compromete a que, en el supuesto de que no se requiera el tratamiento de los datos personales de los Titulares durante un periodo de tiempo razonable, este tomará todas las medidas de seguridad pertinentes para eliminar, bloquear, seudonimizar o anonimizar los datos personales.\n\n',
-                      ),
-                      TextSpan(
-                        text: '6. Derechos del titular\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'Para el ejercicio de cualquiera de los derechos aquí plasmados o reclamación única y exclusivamente sobre el tratamiento de datos personales, los Titulares deberán enviar una solicitud a la siguiente dirección electrónica: legal@mmhcloseness.com\n\n'
-                            'La solicitud deberá contener, al menos lo siguiente:\n\n'
-                            '   • Nombres y apellidos completos de los Titulares, número de cédula de identidad o pasaporte y dirección domiciliaria o electrónica para notificaciones. Cuando se actúa en calidad de representante legal, se hará constar también los datos del representado.\n\n'
-                            '   • La descripción clara y precisa del derecho que se busca ejercer y detalle de los datos personales en los cuales se busca ejercer el mismo, conforme la Ley Orgánica de Protección de Datos Personales.\n\n'
-                            '   • A la solicitud se acompañará los documentos que acrediten la identidad o, en su caso, la representación legal o convencional del titular.\n\n'
-                            'En caso de que la información constante en la solicitud requiera ser aclarecida o ampliada, OTTOKARE requerirá a los Titulares, por una sola vez y dentro del término de cinco días de recibida la solicitud, que la aclare o complete. Los Titulares contará con el término de diez días contados a partir del día siguiente en el que haya sido notificado con la solicitud de aclaración o ampliación para aclarar o completar la solicitud. Si los Titulares aclaran o completan la solicitud dentro del término mencionado, el Responsable del Tratamiento dará la debida atención a la solicitud, caso contrario, OTTOKARE se reserva el derecho de archivar la solicitud, para lo cual se notificará a los Titulares de este hecho con las razones de la decisión. En el caso de que se lo requiera, los Titulares podrán comunicarse directamente con la Autoridad de Protección de Datos Personales ecuatoriana.\n\n',
-                      ),
-                      TextSpan(
-                        text: '7. No entrega de datos personales, o datos erróneos o inexactos\n\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                        'Para el cumplimiento de cualquiera de los fines establecidos por OTTOKARE, los Titulares deberán entregar la información exacta y completa, caso contrario los servicios o solicitudes no podrán ser prestados de manera adecuada. Así mismo, OTTOKARE se reserva el derecho de no prestar el servicio o solicitudes a los Titulares, si los datos de estos no son entregados, o son entregados con errores, inexactos o incorrectos.',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      barrierColor: Colors.black54,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: paperMaxWidth,
+              maxHeight: MediaQuery.of(context).size.height * 0.92,
+              minWidth: 600,
             ),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green, // Botón verde
-              foregroundColor: Colors.white, // Texto blanco
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            child: Material(
+              color: pageWhite,
+              elevation: 14,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(40, 18, 32, 18),
+                child: Column(
+                  children: [
+                    // Título con logo en la misma línea
+                    SizedBox(
+                      height: 64,
+                      child:
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'TRATAMIENTO DE DATOS PERSONALES',
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              color: titleBlue,
+                              letterSpacing: 0.6,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(width: 12),
+                          Image.asset(
+                            'lib/ui/img/Logo1.png',
+                            width: logoWidth,
+                            height: logoWidth,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+                    Divider(color: Colors.grey.shade300, thickness: 1),
+                    const SizedBox(height: 8),
+
+                    // Contenido scrollable
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: FractionallySizedBox(
+                            widthFactor: contentWidthFactor,
+                            alignment: Alignment.topCenter,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'TRATAMIENTO DE DATOS PERSONALES',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: titleBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  intro,
+                                  style: const TextStyle(
+                                    fontSize: 15.0,
+                                    color: bodyBlue,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.justify,
+                                ),
+                                const SizedBox(height: 16),
+
+                                _numberedSection(1, 'Datos personales que se recopilarán', [
+                                  'Datos identificativos: nombres, apellidos, cédula/pasaporte, dirección, teléfono, correo electrónico.',
+                                  'Datos de pago: número de cuenta o tarjeta, historial de pagos.',
+                                  'Datos relacionados con la mascota: nombre, especie, raza, edad, historial médico veterinario, características físicas, fotografías.',
+                                  'Datos sensibles: información sobre la salud de la mascota.',
+                                ]),
+
+                                _numberedSection(2, 'Finalidades del tratamiento', [
+                                  'Gestionar la suscripción y prestación del servicio de asistencia para mascotas.',
+                                  'Coordinar atención veterinaria, transporte o servicios complementarios conforme el certificado de cobertura.',
+                                  'Realizar seguimiento y control de casos de asistencia.',
+                                  'Gestionar pagos, facturación y cobranzas.',
+                                  'Atender consultas, solicitudes o reclamos.',
+                                  'Cumplir con obligaciones legales, contractuales o regulatorias.',
+                                  'Enviar comunicaciones informativas o comerciales relacionadas con el servicio, siempre que el titular no haya ejercido su derecho de oposición.',
+                                ]),
+
+                                _numberedSection(3, 'Base legal del tratamiento', [
+                                  'Que sea realizado por el responsable del tratamiento, por orden judicial u obligación legal.',
+                                  'Para la ejecución de medidas precontractuales a petición del titular o para el cumplimiento de obligaciones contractuales.',
+                                  'Para satisfacer un interés legítimo del responsable de tratamiento.',
+                                ]),
+
+                                _numberedSection(4, 'Comunicación y almacenamiento de datos', [
+                                  'Los datos podrán ser compartidos con proveedores, veterinarios, clínicas, aseguradoras, empresas de transporte o call centers que actúen como encargados del tratamiento, únicamente para el cumplimiento de las finalidades antes descritas.',
+                                  'En caso de transferencias internacionales, se garantizará que el país de destino cuente con niveles adecuados de protección o que existan garantías contractuales suficientes.',
+                                  'El almacenamiento podrá realizarse en servidores propios o en servicios de computación en la nube, con las medidas técnicas y organizativas necesarias para proteger la información.',
+                                ]),
+
+                                _numberedSection(5, 'Plazo de conservación', [
+                                  'OTTOKARE conservará los datos personales por un período de tiempo razonable tras terminar la relación contractual para permitir la defensa en caso de reclamos.',
+                                  'Los datos serán tratados solo en la medida necesaria para los fines, o según lo exija la ley.',
+                                  'OTTOKARE tomará medidas para eliminar, bloquear, seudonimizar o anonimizar los datos cuando no sean necesarios.',
+                                ]),
+
+                                _numberedSection(6, 'Derechos del titular', [
+                                  'Para ejercer derechos sobre los datos, enviar solicitud a: legal@mmhcloseness.com',
+                                  'La solicitud deberá contener al menos: nombres completos, cédula/pasaporte, dirección de notificación y descripción clara de la solicitud.',
+                                ]),
+
+                                _numberedSection(7, 'No entrega de datos personales, o datos erróneos o inexactos', [
+                                  'Los titulares deberán entregar información exacta y completa, caso contrario los servicios no podrán ser prestados de manera adecuada.',
+                                ]),
+
+                                const SizedBox(height: 18),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Botón aceptar
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: titleBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          setState(() => _acceptData = true);
+                        },
+                        child: const Text(
+                          'ACEPTAR',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() => _acceptData = true);
-            },
-            child: const Text('Aceptar', style: TextStyle(fontSize: 14)),
           ),
-        ],
-        scrollable: true,
+        ),
       ),
     );
   }
-  Future<void> _enviarDatos() async {
+
+// Widget auxiliar para las secciones
+  Widget _buildSection({required String title, required String content}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.justify,
+        ),
+      ],
+    );
+  }  Future<void> _enviarDatos() async {
     // Mostrar indicador de carga
     showDialog(
       context: context,
@@ -2011,6 +2203,8 @@ class _FormPageState extends State<FormPage> {
   void initState() {
     super.initState();
 
+
+
     _emailFocus.addListener(() {
       if (!_emailFocus.hasFocus) {
         setState(() {
@@ -2029,3 +2223,81 @@ class _FormPageState extends State<FormPage> {
 
 
 }
+// const SizedBox(height: 18),
+//
+// // Botón agregar mascota
+//
+// Row(
+//   children: [
+//     Expanded(
+//       child: ElevatedButton.icon(
+//         onPressed: () {
+//           if (_petNameCtrl.text
+//               .isEmpty ||
+//               _selectedBreed == null ||
+//               _selectedBirthDate ==
+//                   null) {
+//
+//             ScaffoldMessenger.of(
+//                 context).showSnackBar(
+//               const SnackBar(
+//                   content: Text(
+//                       'Complete todos los datos del formulario')),
+//             );
+//             return;
+//           }
+//
+//           // Convertimos DateTime a String (dd/MM/yyyy)
+//           final birthDateStr =
+//               "${_selectedBirthDate!.day
+//               .toString().padLeft(
+//               2, '0')}/"
+//               "${_selectedBirthDate!
+//               .month.toString().padLeft(
+//               2, '0')}/"
+//               "${_selectedBirthDate!
+//               .year}";
+//
+//           setState(() {
+//             _mascotas.add({
+//               'nombre': _petNameCtrl.text,
+//               'raza': _selectedBreed ?? '',
+//               'species': _selectedSpecies ?? '',
+//               'gender': _selectedGender ?? '',
+//               'color': _petColorCtrl.text,
+//               'birth_date': _selectedBirthDate!.toIso8601String(),
+//               'carnet': _petCarnetCtrl.text,
+//               'defect': _hasDefect == true
+//                   ? _defectCtrl.text
+//                   : 'La mascota no tiene defectos',                                                    });
+//
+//             ScaffoldMessenger.of(context).showSnackBar(
+//               const SnackBar(
+//                 content: Text('Mascota agregada correctamente'),
+//                 backgroundColor: Colors.green,
+//               ),
+//             );
+//
+//             // Limpiar campos
+//             _petNameCtrl.clear();
+//             _selectedGender = null;
+//             _selectedBreed = null;
+//             _selectedSpecies = null;
+//             _birthDateCtrl.clear();
+//             _selectedBirthDate = null;
+//             _petColorCtrl.clear();
+//             _hasDefect = null;
+//             _petCarnetCtrl.clear();
+//           });
+//         },
+//         icon: const Icon(Icons.add),
+//         label: const Text(
+//             'Agregar Mascota'),
+//         style: ElevatedButton.styleFrom(
+//           backgroundColor: Colors.green,
+//           foregroundColor: Colors.white,
+//         ),
+//       ),
+//     ),
+//   ],
+// ),
