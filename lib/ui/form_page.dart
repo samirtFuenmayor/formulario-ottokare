@@ -1,5 +1,5 @@
 // lib/pages/form_page.dart
-import 'dart:js_interop';
+//import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -67,8 +67,8 @@ class _FormPageState extends State<FormPage> {
   final FocusNode _phoneFocusNode = FocusNode();
   final _emailFocus = FocusNode();
   String? _emailError;
-
-
+  Uint8List? _photoBytes;
+  String? _photoFileName;
 
 
   final List<String> _genders = ['Hembra', 'Macho'];
@@ -336,13 +336,24 @@ class _FormPageState extends State<FormPage> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.path != null) {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true, // te da los bytes directamente (útil en Web)
+    );
+
+    if (result != null) {
       setState(() {
-        _photoFile = File(result.files.single.path!);
+        if (result.files.single.bytes != null) {
+          // Para Web o móvil
+          _photoBytes = result.files.single.bytes;
+          _photoFileName = result.files.single.name;
+        } else if (result.files.single.path != null) {
+          // Para escritorio / móvil (donde sí hay path real)
+          _photoFile = File(result.files.single.path!);
+          _photoFileName = result.files.single.name;
+        }
       });
     }
-
   }
 
 
@@ -555,6 +566,16 @@ class _FormPageState extends State<FormPage> {
                     //   ),
                     // );
                     // Mostrar animación de carga con Lottie
+                    if (_photoBytes == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes subir una foto'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -567,7 +588,18 @@ class _FormPageState extends State<FormPage> {
                         ),
                       ),
                     );
+                    String? imageBase64;
+                    if (_photoBytes != null) {
+                      // Caso Web (bytes)
+                      imageBase64 = base64Encode(_photoBytes!);
+                    } else if (_photoFile != null) {
+                      // Caso Android/iOS/Escritorio (File con path)
+                      final bytes = await _photoFile!.readAsBytes();
+                      imageBase64 = base64Encode(bytes);
+                    }
 
+                    // Convertir bytes a Base64
+                    //final imageBase64 = base64Encode(_photoBytes!);
 
                     try {
                       // Enviar datos al backend
@@ -596,8 +628,7 @@ class _FormPageState extends State<FormPage> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => SuccessPage(
-                            nombre: _ownerNameCtrl.text,
-                            mascota: _petNameCtrl.text,
+
                           ),
                         ),
                       );
@@ -873,7 +904,7 @@ class _FormPageState extends State<FormPage> {
                                         ),
                                         const SizedBox(height: 12),
                                         _rowLabelFieldResponsive(
-                                          'Cédula',
+                                          'Cédula del titular',
                                           TextFormField(
                                             controller: _idCtrl,
                                             decoration: _fieldDecoration('Cédula'),
@@ -1408,6 +1439,17 @@ class _FormPageState extends State<FormPage> {
                                                 );
                                                 return;
                                               }
+                                              if (_photoFile == null && _photoBytes == null) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Debes subir una foto'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+
                                               if (_hasCarnet == null) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(
@@ -1460,6 +1502,15 @@ class _FormPageState extends State<FormPage> {
                                               );
 
                                               try {
+                                               // String? imageBase64;
+
+                                                String? imageBase64;
+                                                if (_photoBytes != null) {
+                                                  imageBase64 = base64Encode(_photoBytes!);
+                                                } else if (_photoFile != null) {
+                                                  final bytes = await _photoFile!.readAsBytes();
+                                                  imageBase64 = base64Encode(bytes);
+                                                }
                                                 // Convertimos fecha a String
                                                 final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
                                                     "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
@@ -1485,6 +1536,7 @@ class _FormPageState extends State<FormPage> {
                                                           ? "No tendrá cobertura hasta que tenga carnet"
                                                           : _petCarnetCtrl.text,
                                                       'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
+                                                      'image_base64': imageBase64, // <-- Aquí va la foto en Base64
                                                     }
                                                   ],
                                                 );
@@ -1498,8 +1550,7 @@ class _FormPageState extends State<FormPage> {
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (_) => SuccessPage(
-                                                      nombre: nombreTemp,
-                                                      mascota: mascotaTemp,
+
                                                     ),
                                                   ),
                                                 );

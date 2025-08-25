@@ -42,6 +42,7 @@ class FormRepository {
                   : pet['birth_date'])
               : null,
           "identification": pet['carnet'] ?? "",
+          "image_base64": pet['image_base64'] ?? "",
         };
       }).toList(),
     };
