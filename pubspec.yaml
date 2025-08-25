@@ -41,6 +41,7 @@ dependencies:
   confetti: ^0.7.0
   lottie: ^3.1.2
   google_fonts: ^4.0.4 # Añade esta línea
+  auto_size_text: ^3.0.0
   #http: ^1.1.0
   flutter_localizations:
       sdk: flutter
@@ -78,7 +79,7 @@ flutter:
     - lib/ui/animation/error.json
     - lib/ui/animation/error_dog.json
     - lib/ui/img/Logo1.png
-    - lib/ui/img/guardad.png
+    - lib/ui/img/Hola.png
     - lib/ui/img/diseño.png
 
 

@@ -300,19 +300,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'form_page.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class SuccessPage extends StatelessWidget {
-  final String nombre;
-  final String mascota;
-   const SuccessPage({super.key, required this.nombre, required this.mascota});
+  const SuccessPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final isSmallScreen = size.width < 600;
-    print("SuccessPage - nombre recibido: $nombre");
-    print("SuccessPage - mascota recibida: $mascota");
 
     return Scaffold(
       body: Stack(
@@ -343,77 +337,15 @@ class SuccessPage extends StatelessWidget {
             ),
           ),
 
-          // Contenido principal (Card con imagen y textos encima)
+          // Imagen central adaptativa
           Center(
-            child: Container(
-              width: isSmallScreen ? size.width * 0.95 : 700,
-              height: isSmallScreen ? size.height * 0.85 : size.height * 0.9,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 15,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Imagen de fondo
-                    Image.asset(
-                      'lib/ui/img/diseño.png',
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
-
-                    // Primer texto: Título blanco arriba
-                    Align(
-                      alignment: const Alignment(0, -0.9), // arriba
-                      child:  Text(
-                        "Hola $nombre",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                      ),
-                    ),
-
-                    // Segundo texto: párrafo azul abajo/izquierda
-                    Align(
-                      alignment: const Alignment(0.1, -0.5),
-                      child: Text(
-                        "¡Gracias por activar el producto\nOtto Plan para tu mascota $mascota!\n\nSu ingreso a nuestro servicio\nOttoKare nos llena de alegria.\n\nPreparate para descubrir una\nnueva forma de cuidar el bienestar\nde tu mascota.\n",
-                        style: GoogleFonts.roboto( // Usa Roboto de Google Fonts
-                          textStyle: TextStyle(
-                            color: Color(0xFF0A1B70),
-                            fontSize: 22.3,
-                            fontWeight: FontWeight.w600,
-                            height: 1.4,
-                          ),
-                        ),
-                        maxLines: null,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),                    //quinto texto
-                  ],
-                ),
-              ),
+            child: Image.asset(
+              'lib/ui/img/Hola.png',
+              width: size.width * 0.9,  // 90% del ancho de pantalla
+              height: size.height * 0.9, // 90% del alto de pantalla
+              fit: BoxFit.contain,
             ),
           ),
-
-          // Botón flotante abajo (opcional)
         ],
       ),
     );
