@@ -58,6 +58,7 @@ class _FormPageState extends State<FormPage> {
   String? _selectedSpecies;
   String? _selectedBreed;
   bool? _hasCarnet; // null, true = Sí, false = No
+
   TextEditingController _petCarnetCtrl = TextEditingController();
 
   // Lista para guardar mascotas temporalmente
@@ -69,6 +70,7 @@ class _FormPageState extends State<FormPage> {
   String? _emailError;
   Uint8List? _photoBytes;
   String? _photoFileName;
+
 
 
   final List<String> _genders = ['Hembra', 'Macho'];
@@ -452,6 +454,15 @@ class _FormPageState extends State<FormPage> {
     }
   }
 
+  int _calculateAge(DateTime birthDate) {
+    DateTime today = DateTime.now();
+    int age = today.year - birthDate.year;
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
+      age--;
+    }
+    return age;
+  }
 
   Widget buildMascotasDialog(BuildContext context, double width) {
     return Dialog(
@@ -1139,36 +1150,34 @@ class _FormPageState extends State<FormPage> {
                                           TextFormField(
                                             controller: _birthDateCtrl,
                                             readOnly: true,
-                                            decoration: _fieldDecoration(
-                                                'Selecciona fecha'),
+                                            decoration: _fieldDecoration('Selecciona fecha'),
                                             onTap: () async {
                                               DateTime? pickedDate = await showDatePicker(
                                                 context: context,
                                                 initialDate: DateTime.now(),
                                                 firstDate: DateTime(1900),
                                                 lastDate: DateTime.now(),
-                                                locale: const Locale(
-                                                    'es', 'ES'),
+                                                locale: const Locale('es', 'ES'),
                                               );
+
                                               if (pickedDate != null) {
                                                 setState(() {
-                                                  _selectedBirthDate =
-                                                      pickedDate; // guardamos DateTime
+                                                  _selectedBirthDate = pickedDate;
+                                                  int edad = _calculateAge(pickedDate);
+
                                                   _birthDateCtrl.text =
-                                                  "${pickedDate.day
-                                                      .toString()
-                                                      .padLeft(2, '0')}/"
-                                                      "${pickedDate.month
-                                                      .toString().padLeft(
-                                                      2, '0')}/"
-                                                      "${pickedDate.year}";
+                                                  "${pickedDate.day.toString().padLeft(2, '0')}/"
+                                                      "${pickedDate.month.toString().padLeft(2, '0')}/"
+                                                      "${pickedDate.year}  |  Tiene $edad años";
                                                 });
                                               }
                                             },
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                                            validator: (v) =>
+                                            (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
                                         ),
+
 
                                         const SizedBox(height: 12),
                                         _rowLabelFieldResponsive(
@@ -1267,27 +1276,38 @@ class _FormPageState extends State<FormPage> {
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              DropdownButtonFormField<bool>(
-                                                value: _hasCarnet,
-                                                decoration: _fieldDecoration('¿Tiene carnet?'),
-                                                items: const [
-                                                  DropdownMenuItem(value: true, child: Text('Sí')),
-                                                  DropdownMenuItem(value: false, child: Text('No')),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: RadioListTile<bool>(
+                                                      title: const Text("Sí"),
+                                                      value: true,
+                                                      groupValue: _hasCarnet,
+                                                      onChanged: (val) {
+                                                        setState(() {
+                                                          _hasCarnet = val;
+                                                          _petCarnetCtrl.clear();
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: RadioListTile<bool>(
+                                                      title: const Text("No"),
+                                                      value: false,
+                                                      groupValue: _hasCarnet,
+                                                      onChanged: (val) {
+                                                        setState(() {
+                                                          _hasCarnet = val;
+                                                          _petCarnetCtrl.clear();
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
                                                 ],
-                                                onChanged: (val) {
-                                                  setState(() {
-                                                    _hasCarnet = val;
-                                                    if (_hasCarnet == false) {
-                                                      _petCarnetCtrl.text = "No tendrá cobertura hasta que tenga carnet";
-                                                    } else {
-                                                      _petCarnetCtrl.clear();
-                                                    }
-                                                  });
-                                                },
-                                                validator: (v) => v == null ? 'Campo obligatorio' : null,
                                               ),
-                                              const SizedBox(height: 8),
-                                              // Solo muestra el campo de texto si seleccionó Sí
+
+                                              // SI: digita carnet
                                               if (_hasCarnet == true)
                                                 TextFormField(
                                                   controller: _petCarnetCtrl,
@@ -1299,10 +1319,22 @@ class _FormPageState extends State<FormPage> {
                                                     return null;
                                                   },
                                                 ),
+
+                                              // NO: mensaje de advertencia
+                                              if (_hasCarnet == false)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 8.0),
+                                                  child: Text(
+                                                    "Las asistencias no serán entregadas hasta que cuente con carnet actualizado",
+                                                    style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
+                                                  ),
+                                                ),
                                             ],
                                           ),
                                           isMobile,
                                         ),
+
+
                                         const SizedBox(height: 12),
 
                                         // Foto
@@ -1476,8 +1508,8 @@ class _FormPageState extends State<FormPage> {
                                                   _selectedGender == null ||
                                                   _selectedBirthDate == null ||
                                                   _petColorCtrl.text.isEmpty ||
-                                                  _petCarnetCtrl.text.isEmpty ||
-                                                  (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                                                  (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||  // Solo obligatorio si es "Sí"
+                                                  (_hasDefect == true && _defectCtrl.text.isEmpty)) {     // Solo obligatorio si es "Sí"
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   const SnackBar(
                                                     content: Text('Completa todos los datos de la mascota'),
