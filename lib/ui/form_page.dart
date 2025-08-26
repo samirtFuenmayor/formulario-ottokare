@@ -1404,7 +1404,7 @@ class _FormPageState extends State<FormPage> {
                                                   }
                                                 },
                                                 child: const Text(
-                                                  'Declaro que la información es real y acepto el uso de la misma según la Protección de Datos Personales.',
+                                                  'He leído y comprendido sobre el tratamiento de datos personales.',
                                                   style: TextStyle(fontSize: 13),
                                                 ),
                                               ),
