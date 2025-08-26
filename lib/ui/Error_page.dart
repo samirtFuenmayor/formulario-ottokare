@@ -82,12 +82,7 @@ class ErrorPage extends StatelessWidget {
                     width: isSmallScreen ? double.infinity : null,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const FormPage(),
-                          ),
-                        );
+
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
