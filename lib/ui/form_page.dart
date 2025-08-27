@@ -2243,7 +2243,8 @@ class _FormPageState extends State<FormPage> {
         ),
       ],
     );
-  }  Future<void> _enviarDatos() async {
+  }  
+  Future<void> _enviarDatos() async {
     // Mostrar indicador de carga
     showDialog(
       context: context,
@@ -2295,11 +2296,11 @@ class _FormPageState extends State<FormPage> {
   @override
   void initState() {
    // final String idContrato = Uri.base.queryParameters['contract'] ?? '';
-    final String idContrato = Uri.base.queryParameters['contract_id'] ?? '';
+    /*final String idContrato = Uri.base.queryParameters['contract_id'] ?? '';
     super.initState();
     runApp(MaterialApp(
       home: FormPage(idContrato: int.tryParse(idContrato) ?? 0),
-    ));
+    ));*/
 
 
 
