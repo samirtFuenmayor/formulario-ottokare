@@ -19,8 +19,10 @@ import 'Error_page.dart';
 
 
 
+
 class FormPage extends StatefulWidget {
-  const FormPage({super.key});
+  final int idContrato; // recibimos el id desde la URL
+  const FormPage({super.key, required this.idContrato});
 
   @override
   State<FormPage> createState() => _FormPageState();
@@ -390,6 +392,7 @@ class _FormPageState extends State<FormPage> {
         "home_address": _cityCtrl.text,
         "postal_code": "1122", // si quieres dinámico, reemplazar
       },
+      "contract_id": widget.idContrato.toString(),
       "pets": _mascotas.map((pet) {
         return {
           "first_name": pet['nombre'],
@@ -621,6 +624,7 @@ class _FormPageState extends State<FormPage> {
                         celular: _phoneCtrl.text,
                         email: _emailCtrl.text,
                         ciudad: _cityCtrl.text,
+                        contractId: widget.idContrato.toString(),
                         mascotas: _mascotas,
                       );
 
@@ -1144,36 +1148,40 @@ class _FormPageState extends State<FormPage> {
                                           isMobile,
                                         ),
                                         const SizedBox(height: 12),
-                                        // Fecha nacimiento
+///////////////////////////////////////////////////////////////////aqui esta la fecha
                                         _rowLabelFieldResponsive(
                                           'Fecha de nacimiento',
-                                          TextFormField(
-                                            controller: _birthDateCtrl,
-                                            readOnly: true,
-                                            decoration: _fieldDecoration('Selecciona fecha'),
-                                            onTap: () async {
-                                              DateTime? pickedDate = await showDatePicker(
-                                                context: context,
-                                                initialDate: DateTime.now(),
-                                                firstDate: DateTime(1900),
-                                                lastDate: DateTime.now(),
-                                                locale: const Locale('es', 'ES'),
+                                          Builder(
+                                            builder: (context) {
+                                              return TextFormField(
+                                                controller: _birthDateCtrl,
+                                                readOnly: true,
+                                                decoration: _fieldDecoration('Selecciona fecha'),
+                                                onTap: () async {
+                                                  FocusScope.of(context).requestFocus(FocusNode()); // cierra teclado
+
+                                                  DateTime? pickedDate = await showDatePicker(
+                                                    context: context, // ✅ usa el context del Builder, no navigatorKey
+                                                    initialDate: DateTime.now(),
+                                                    firstDate: DateTime(1900),
+                                                    lastDate: DateTime.now(),
+                                                    locale: const Locale('es', 'ES'),
+                                                  );
+
+                                                  if (pickedDate != null) {
+                                                    setState(() {
+                                                      _selectedBirthDate = pickedDate;
+                                                      int edad = _calculateAge(pickedDate);
+                                                      _birthDateCtrl.text =
+                                                      "${pickedDate.day.toString().padLeft(2, '0')}/"
+                                                          "${pickedDate.month.toString().padLeft(2, '0')}/"
+                                                          "${pickedDate.year} | Tiene $edad años";
+                                                    });
+                                                  }
+                                                },
+                                                validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                               );
-
-                                              if (pickedDate != null) {
-                                                setState(() {
-                                                  _selectedBirthDate = pickedDate;
-                                                  int edad = _calculateAge(pickedDate);
-
-                                                  _birthDateCtrl.text =
-                                                  "${pickedDate.day.toString().padLeft(2, '0')}/"
-                                                      "${pickedDate.month.toString().padLeft(2, '0')}/"
-                                                      "${pickedDate.year}  |  Tiene $edad años";
-                                                });
-                                              }
                                             },
-                                            validator: (v) =>
-                                            (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                                           ),
                                           isMobile,
                                         ),
@@ -1556,6 +1564,7 @@ class _FormPageState extends State<FormPage> {
                                                   celular: _phoneCtrl.text,
                                                   email: _emailCtrl.text,
                                                   ciudad: _cityCtrl.text,
+                                                  contractId: widget.idContrato.toString(), // <-- se agrega aquí
                                                   mascotas: [
                                                     {
                                                       'nombre': _petNameCtrl.text,
@@ -1566,12 +1575,15 @@ class _FormPageState extends State<FormPage> {
                                                       'birth_date': _selectedBirthDate!.toIso8601String(),
                                                       'carnet': _hasCarnet == false
                                                           ? "No tendrá cobertura hasta que tenga carnet"
-                                                          : _petCarnetCtrl.text,
+                                                          : _petCarnetCtrl.text,  // Solo si es "Sí"
                                                       'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
-                                                      'image_base64': imageBase64, // <-- Aquí va la foto en Base64
+                                                      'image_base64': imageBase64,
                                                     }
                                                   ],
                                                 );
+                                                print("Datos que se enviarán: $mensaje");
+
+
 
                                                 Navigator.of(context).pop(); // cerrar loader
                                                 final nombreTemp = _ownerNameCtrl.text;
@@ -2234,7 +2246,8 @@ class _FormPageState extends State<FormPage> {
         ),
       ],
     );
-  }  Future<void> _enviarDatos() async {
+  }  
+  Future<void> _enviarDatos() async {
     // Mostrar indicador de carga
     showDialog(
       context: context,
@@ -2250,6 +2263,7 @@ class _FormPageState extends State<FormPage> {
         celular: _phoneCtrl.text,
         email: _emailCtrl.text,
         ciudad: _cityCtrl.text,
+        contractId: widget.idContrato.toString(),
         mascotas: _mascotas,
       );
 
@@ -2284,7 +2298,12 @@ class _FormPageState extends State<FormPage> {
   }
   @override
   void initState() {
+   // final String idContrato = Uri.base.queryParameters['contract'] ?? '';
+    /*final String idContrato = Uri.base.queryParameters['contract_id'] ?? '';
     super.initState();
+    runApp(MaterialApp(
+      home: FormPage(idContrato: int.tryParse(idContrato) ?? 0),
+    ));*/
 
 
 
