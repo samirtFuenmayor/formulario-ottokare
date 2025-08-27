@@ -1577,10 +1577,13 @@ class _FormPageState extends State<FormPage> {
                                                           ? "No tendrá cobertura hasta que tenga carnet"
                                                           : _petCarnetCtrl.text,  // Solo si es "Sí"
                                                       'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
-                                                      'image_base64': imageBase64, // <-- Aquí va la foto en Base64
+                                                      'image_base64': imageBase64,
                                                     }
                                                   ],
                                                 );
+                                                print("Datos que se enviarán: $mensaje");
+
+
 
                                                 Navigator.of(context).pop(); // cerrar loader
                                                 final nombreTemp = _ownerNameCtrl.text;
