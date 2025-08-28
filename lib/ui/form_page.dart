@@ -719,9 +719,86 @@ class _FormPageState extends State<FormPage> {
 
 
   @override
+  /*
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final bool isMobile = size.width < 800;
+    final bool isTablet = size.width >= 800 && size.width < 1200;
+
+    return Scaffold(
+      backgroundColor: Colors.grey[200],
+      body: Center(
+        child: Container(
+          width: size.width * 0.9,
+          height: isMobile || isTablet ? null : size.height * 0.85,
+          constraints: isMobile || isTablet
+              ? const BoxConstraints() // deja que crezca según contenido
+              : BoxConstraints(maxHeight: size.height * 0.85),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: (isMobile || isTablet)
+              ? Column(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+                child: Image.asset(
+                  'lib/ui/img/vista_movil.png', // misma imagen para móvil y tablet
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: _buildFormContainer(isMobile),
+                ),
+              ),
+            ],
+          )
+              : Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    bottomLeft: Radius.circular(24),
+                  ),
+                  child: Image.asset(
+                    'lib/ui/img/vistaEscritorio.jpg',
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: _buildFormContainer(false),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  */
+
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final bool isMobile = size.width < 800;
+    final bool isTablet = size.width >= 800 && size.width < 1200;
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -760,80 +837,49 @@ class _FormPageState extends State<FormPage> {
                 ),
               ),
               Expanded(
-                child: SingleChildScrollView( // 👈 scroll si el form es largo
+                child: SingleChildScrollView(
                   child: _buildFormContainer(isMobile),
                 ),
               ),
             ],
           )
-              : Row(
+              : isTablet
+              ? Row(
             children: [
               Expanded(
-                flex: 2,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    bottomLeft: Radius.circular(24),
-                  ),
-                  child: Image.asset(
-                    'lib/ui/img/vistaEscritorio.jpg',
-                    fit: BoxFit.fitWidth,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
+                flex: 3,
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                      child: Image.asset(
+                        'lib/ui/img/vista_movil.png', // misma imagen de móvil
+                        fit: BoxFit.fitWidth,
+                        width: double.infinity,
+                      ),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _buildFormContainer(false),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
                 flex: 2,
-                child: _buildFormContainer(isMobile),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /*
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final bool isMobile = size.width < 800;
-
-    return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: Center(
-        child: Container(
-          width: size.width * 0.9,
-          height: size.height * 0.85,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 16,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: isMobile
-              ? Column(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1ABC9C),
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                  ),
                 ),
-                child: Image.asset(
-                  'lib/ui/img/vista_movil.png',
-                  //fit: BoxFit.cover,
-                  fit: BoxFit.fitWidth,
-                  width: double.infinity,
-                  //height: size.height * 0.35,
-                ),
-              ),
-              Expanded(
-                child: _buildFormContainer(isMobile),
               ),
             ],
           )
@@ -864,7 +910,6 @@ class _FormPageState extends State<FormPage> {
       ),
     );
   }
-*/
   Widget _buildFormContainer(bool isMobile) {
     // El scroll interno solo se aplica si NO es móvil
     final formContent = Padding(
@@ -1592,6 +1637,80 @@ class _FormPageState extends State<FormPage> {
       ),
     );
   }
+
+  /*
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final bool isMobile = size.width < 800;
+
+    return Scaffold(
+      backgroundColor: Colors.grey[200],
+      body: Center(
+        child: Container(
+          width: size.width * 0.9,
+          height: size.height * 0.85,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: isMobile
+              ? Column(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+                child: Image.asset(
+                  'lib/ui/img/vista_movil.png',
+                  //fit: BoxFit.cover,
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                  //height: size.height * 0.35,
+                ),
+              ),
+              Expanded(
+                child: _buildFormContainer(isMobile),
+              ),
+            ],
+          )
+              : Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    bottomLeft: Radius.circular(24),
+                  ),
+                  child: Image.asset(
+                    'lib/ui/img/vistaEscritorio.jpg',
+                    fit: BoxFit.fitWidth,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: _buildFormContainer(isMobile),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+*/
+
+
 
 
 /*
