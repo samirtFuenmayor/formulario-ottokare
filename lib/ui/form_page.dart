@@ -16,10 +16,6 @@ import 'package:flutter/services.dart'; // Para FilteringTextInputFormatter
 import 'Succes_page.dart';
 import 'package:lottie/lottie.dart';
 import 'Error_page.dart';
-
-
-
-
 class FormPage extends StatefulWidget {
   final int idContrato; // recibimos el id desde la URL
   const FormPage({super.key, required this.idContrato});
@@ -46,6 +42,7 @@ class _FormPageState extends State<FormPage> {
   final TextEditingController _petBreedCtrl = TextEditingController();
   final TextEditingController _petSpeciesCtrl = TextEditingController();
   final TextEditingController _petColorCtrl = TextEditingController();
+
   //final TextEditingController _petCarnetCtrl = TextEditingController();
 
   // Age fields
@@ -72,7 +69,6 @@ class _FormPageState extends State<FormPage> {
   String? _emailError;
   Uint8List? _photoBytes;
   String? _photoFileName;
-
 
 
   final List<String> _genders = ['Hembra', 'Macho'];
@@ -308,7 +304,6 @@ class _FormPageState extends State<FormPage> {
       'Tonkinés',
       'Van Turco'
     ]
-
   };
 
   File? _photoFile;
@@ -335,8 +330,6 @@ class _FormPageState extends State<FormPage> {
     _ageYearCtrl.dispose();
 
     super.dispose();
-
-
   }
 
   Future<void> _pickFile() async {
@@ -361,22 +354,23 @@ class _FormPageState extends State<FormPage> {
   }
 
 
-  InputDecoration _fieldDecoration(String hint) =>
-      InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: const Color(0xFFF6FBFB),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(24),
-          borderSide: BorderSide(color: Colors.transparent),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(24),
-          borderSide: BorderSide(color: Colors.blueAccent),
-        ),
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      );
+// 1) Reemplaza tu _fieldDecoration por esta versión (bordes cuadrado, sin radio)
+  InputDecoration _fieldDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.zero,
+        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.zero,
+        borderSide: BorderSide(color: Color(0xFF0A5970), width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      isDense: true,
+    );
+  }
 
 // Función para construir JSON
   Map<String, dynamic> buildRequestJson() {
@@ -457,14 +451,25 @@ class _FormPageState extends State<FormPage> {
     }
   }
 
-  int _calculateAge(DateTime birthDate) {
+  String _calculateAge(DateTime birthDate) {
     DateTime today = DateTime.now();
-    int age = today.year - birthDate.year;
-    if (today.month < birthDate.month ||
-        (today.month == birthDate.month && today.day < birthDate.day)) {
-      age--;
+
+    int years = today.year - birthDate.year;
+    int months = today.month - birthDate.month;
+    int days = today.day - birthDate.day;
+
+    if (days < 0) {
+      final prevMonth = DateTime(today.year, today.month, 0); // último día del mes anterior
+      days += prevMonth.day;
+      months--;
     }
-    return age;
+
+    if (months < 0) {
+      months += 12;
+      years--;
+    }
+
+    return "$years años $months meses $days días";
   }
 
   Widget buildMascotasDialog(BuildContext context, double width) {
@@ -541,7 +546,8 @@ class _FormPageState extends State<FormPage> {
                     if (!_acceptData) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Debes aceptar los términos y condiciones'),
+                          content: Text(
+                              'Debes aceptar los términos y condiciones'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -551,7 +557,8 @@ class _FormPageState extends State<FormPage> {
                     if (_formKey.currentState?.validate() != true) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Completa todos los campos obligatorios'),
+                          content: Text(
+                              'Completa todos los campos obligatorios'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -593,14 +600,15 @@ class _FormPageState extends State<FormPage> {
                     showDialog(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => Center(
-                        child: Lottie.asset(
-                          'lib/ui/animation/Animacion_de_carga.json',
-                          width: 200,   // Ajusta tamaño
-                          height: 200,  // Ajusta tamaño
-                          fit: BoxFit.contain,
-                        ),
-                      ),
+                      builder: (context) =>
+                          Center(
+                            child: Lottie.asset(
+                              'lib/ui/animation/Animacion_de_carga.json',
+                              width: 200, // Ajusta tamaño
+                              height: 200, // Ajusta tamaño
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                     );
                     String? imageBase64;
                     if (_photoBytes != null) {
@@ -642,14 +650,14 @@ class _FormPageState extends State<FormPage> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => SuccessPage(
+                          builder: (_) =>
+                              SuccessPage(
 
-                          ),
+                              ),
                         ),
                       );
                       // Limpiar formulario
                       _limpiarFormularios();
-
                     } catch (e) {
                       // Cerrar indicador de carga en caso de error
                       Navigator.of(context).pop();
@@ -679,11 +687,13 @@ class _FormPageState extends State<FormPage> {
                   ),
                 ),
               ],
-            ),          ],
+            ),
+          ],
         ),
       ),
     );
   }
+
   void _limpiarFormularios() {
     setState(() {
       _formKey.currentState?.reset();
@@ -707,1261 +717,3406 @@ class _FormPageState extends State<FormPage> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
-    const Color headerBlue = Color(0xFF0A5970); // Azul oscuro original
-    const Color backgroundTurquoise = Color(0xFF08AFC0);
+    final size = MediaQuery.of(context).size;
+    final bool isMobile = size.width < 800;
 
-    //const Color headerBlue = Color(0xFF0A5970);
-    final isMobile = MediaQuery
-        .of(context)
-        .size
-        .width < 800;
-
-    return BlocProvider<FormBloc>(
-      create: (_) => FormBloc(),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            child: Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 1150),
-                margin: const EdgeInsets.symmetric(
-                    vertical: 24, horizontal: 12),
-                child: LayoutBuilder(builder: (context, constraints) {
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      IntrinsicHeight(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Columna izquierda (formulario)
-                            Expanded(
-                              flex: 6,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Form(
-                                    key: _formKey,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .start,
-                                      children: [
-                                        // Header
-                                        // Header
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: isMobile ? 12 : 18,
-                                            vertical: 16,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: headerBlue,
-                                            borderRadius: const BorderRadius
-                                                .vertical(
-                                                top: Radius.circular(12)),
-                                          ),
-                                          child: isMobile
-                                              ? Column(
-                                            crossAxisAlignment: CrossAxisAlignment
-                                                .start,
-                                            children: [
-                                              Row(
-                                                children: [
-
-                                                  const SizedBox(width: 10),
-                                                  const Text(
-                                                    'Asistencia Veterinaria',
-                                                    style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight
-                                                            .w600),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment
-                                                    .spaceAround,
-                                                children: const [
-                                                  Icon(Icons.medical_services,
-                                                      color: Colors.white,
-                                                      size: 20),
-                                                  Icon(Icons.local_hospital,
-                                                      color: Colors.white,
-                                                      size: 20),
-                                                  Icon(Icons.pets,
-                                                      color: Colors.white,
-                                                      size: 20),
-                                                ],
-                                              )
-                                            ],
-                                          )
-                                              : Row(
-                                            children: [
-                                              // Container(
-                                              //   width: 200,
-                                              //   height: 80,
-                                              //   child: Image.asset(
-                                              //     'lib/ui/img/Logo.png',
-                                              //     fit: BoxFit.contain, // Mantiene proporciones
-                                              //   ),
-                                              // ),
-                                              const SizedBox(width: 14),
-                                              const Text(
-                                                'Asistencia Veterinaria',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight
-                                                        .w600),
-                                              ),
-                                              const Spacer(),
-                                              Row(
-                                                children: const [
-                                                  Icon(Icons.medical_services,
-                                                      color: Colors.white),
-                                                  SizedBox(width: 8),
-                                                  Icon(Icons.local_hospital,
-                                                      color: Colors.white),
-                                                  SizedBox(width: 8),
-                                                  Icon(Icons.pets,
-                                                      color: Colors.white),
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                        ),
-                                        // Imagen
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 18.0),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                                12),
-                                            child: Image.asset(
-                                              'lib/ui/img/Clinica-Veterinaria.png',
-                                              width: double.infinity,
-                                              height: 250,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error,
-                                                  stackTrace) =>
-                                                  Container(
-                                                    color: Colors.grey[200],
-                                                    child: const Center(
-                                                        child: Text(
-                                                            'Error cargando imagen')),
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
-
-                                        const SizedBox(height: 16),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 0, vertical: 6),
-                                          child: Text(
-                                            'Datos Dueño de la Mascota',
-                                            style: TextStyle(
-                                                color: headerBlue,
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w700),
-                                          ),
-                                        ),
-
-                                        // Campos Dueño
-                                        _rowLabelFieldResponsive(
-                                          'Nombre dueño de la mascota',
-                                          TextFormField(
-                                            controller: _ownerNameCtrl,
-                                            decoration: _fieldDecoration('Nombre'),
-                                          //
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
-                                            ],
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Obligatorio';
-                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
-                                              return null;
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Apellido del dueño de la mascota',
-                                          TextFormField(
-                                            controller: _ownerLastNameCtrl,
-                                            decoration: _fieldDecoration('Apellido'),
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
-                                            ],
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Obligatorio';
-                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
-                                              return null;
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Cédula del titular',
-                                          TextFormField(
-                                            controller: _idCtrl,
-                                            decoration: _fieldDecoration('Cédula'),
-                                            keyboardType: TextInputType.number,
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter.digitsOnly,
-                                              LengthLimitingTextInputFormatter(10),
-                                            ],
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                              if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
-                                              if (v.length != 10) return 'Debe tener 10 dígitos';
-                                              return null;
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                            _rowLabelFieldResponsive(
-                                              'Celular',
-                                              TextFormField(
-                                                controller: _phoneCtrl,
-                                                decoration: _fieldDecoration('Celular'),
-                                                keyboardType: TextInputType.phone,
-                                                inputFormatters: [
-                                                  FilteringTextInputFormatter.digitsOnly,
-                                                  LengthLimitingTextInputFormatter(10),
-                                                ],
-                                                validator: (v) {
-                                                  if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                                  if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
-                                                  if (v.length != 10) return 'Debe tener 10 dígitos';
-                                                  return null;
-                                                },
-                                              ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        // _rowLabelFieldResponsive(
-                                        //   'E-mail',
-                                        //   TextFormField(
-                                        //     controller: _emailCtrl,
-                                        //     decoration: _fieldDecoration('Correo Electronico'),
-                                        //     keyboardType: TextInputType.emailAddress,
-                                        //     validator: (v) {
-                                        //       if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                        //       if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
-                                        //         return 'Ingrese un email válido';
-                                        //       }
-                                        //       return null;
-                                        //     },
-                                        //   ),
-                                        //   isMobile,
-                                        // ),
-                                        _rowLabelFieldResponsive(
-                                          'E-mail',
-                                          TextFormField(
-                                            controller: _emailCtrl,
-                                            focusNode: _emailFocus, // importante
-                                            keyboardType: TextInputType.emailAddress,
-                                            decoration: _fieldDecoration('Correo Electrónico').copyWith(
-                                              errorText: _emailError, //  muestra error solo al perder foco
-                                            ),
-                                          ),
-                                          isMobile,
-                                        ),
-
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Ciudad',
-                                          TextFormField(
-                                            controller: _cityCtrl,
-                                            decoration: _fieldDecoration('Ciudad'),
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
-                                            ],
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
-                                              return null;
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-
-                                        const SizedBox(height: 20),
-                                        // Datos Mascota
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 0, vertical: 6),
-                                          child: Text(
-                                            'Datos de la Mascota',
-                                            style: TextStyle(
-                                                color: headerBlue,
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w700),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        //DATA TABLE PARA VISULAIZAR LAS MASCOTAS
-                                        if (_mascotas.isNotEmpty)
-                                          SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            child: ConstrainedBox(
-                                              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
-                                              child: SingleChildScrollView(
-                                                scrollDirection: Axis.vertical,
-                                                child: DataTable(
-                                                  columns: const [
-                                                    DataColumn(label: Text('Nombre')),
-                                                    DataColumn(label: Text('Especie')),
-                                                    DataColumn(label: Text('Raza')),
-                                                    DataColumn(label: Text('Color')),
-                                                    DataColumn(label: Text('Carnet')),
-                                                    DataColumn(label: Text('Acciones')),
-                                                  ],
-                                                  rows: _mascotas.map((m) {
-                                                    return DataRow(cells: [
-                                                      DataCell(Text(m['nombre']!)),
-                                                      DataCell(Text(m['species']!)),
-                                                      DataCell(Text(m['raza']!)),
-                                                      DataCell(Text(m['color']!)),
-                                                      DataCell(Text(m['carnet']!)),
-                                                      DataCell(
-                                                        IconButton(
-                                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                                          onPressed: () {
-                                                            setState(() {
-                                                              _mascotas.remove(m);
-                                                            });
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ]);
-                                                  }).toList(),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Nombre de la mascota',
-                                          TextFormField(
-                                            controller: _petNameCtrl,
-                                            decoration: _fieldDecoration('Nombre de la Mascota'),
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
-                                            ],
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
-                                              return null;
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-
-                                        // Dropdowns
-                                        _rowLabelFieldResponsive(
-                                          'Género',
-                                          DropdownButtonFormField<String>(
-                                            value: _selectedGender,
-                                            decoration: _fieldDecoration(
-                                                'Seleccione'),
-                                            items: _genders
-                                                .map((gender) =>
-                                                DropdownMenuItem(value: gender,
-                                                    child: Text(gender)))
-                                                .toList(),
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _selectedGender = value;
-                                              });
-                                            },
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Especie',
-                                          DropdownButtonFormField<String>(
-                                            value: _selectedSpecies,
-                                            decoration: _fieldDecoration(
-                                                'Seleccione'),
-                                            items: _species
-                                                .map((specie) =>
-                                                DropdownMenuItem(
-                                                    value: specie,
-                                                    child: Text(specie)))
-                                                .toList(),
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _selectedSpecies = value;
-                                                _selectedBreed = null;
-                                              });
-                                            },
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Raza',
-                                          DropdownButtonFormField<String>(
-                                            value: _selectedBreed,
-                                            decoration: _fieldDecoration(
-                                                'Seleccione'),
-                                            items: (_selectedSpecies != null
-                                                ? _breeds[_selectedSpecies!] ??
-                                                <String>[]
-                                                : <String>[])
-                                                .map((breed) =>
-                                                DropdownMenuItem(
-                                                    value: breed,
-                                                    child: Text(breed)))
-                                                .toList(),
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _selectedBreed = value;
-                                              });
-                                            },
-                                            validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-///////////////////////////////////////////////////////////////////aqui esta la fecha
-                                        _rowLabelFieldResponsive(
-                                          'Fecha de nacimiento',
-                                          Builder(
-                                            builder: (context) {
-                                              return TextFormField(
-                                                controller: _birthDateCtrl,
-                                                readOnly: true,
-                                                decoration: _fieldDecoration('Selecciona fecha'),
-                                                onTap: () async {
-                                                  FocusScope.of(context).requestFocus(FocusNode()); // cierra teclado
-
-                                                  DateTime? pickedDate = await showDatePicker(
-                                                    context: context, // ✅ usa el context del Builder, no navigatorKey
-                                                    initialDate: DateTime.now(),
-                                                    firstDate: DateTime(1900),
-                                                    lastDate: DateTime.now(),
-                                                    locale: const Locale('es', 'ES'),
-                                                  );
-
-                                                  if (pickedDate != null) {
-                                                    setState(() {
-                                                      _selectedBirthDate = pickedDate;
-                                                      int edad = _calculateAge(pickedDate);
-                                                      _birthDateCtrl.text =
-                                                      "${pickedDate.day.toString().padLeft(2, '0')}/"
-                                                          "${pickedDate.month.toString().padLeft(2, '0')}/"
-                                                          "${pickedDate.year} | Tiene $edad años";
-                                                    });
-                                                  }
-                                                },
-                                                validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
-                                              );
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-
-
-                                        const SizedBox(height: 12),
-                                        _rowLabelFieldResponsive(
-                                          'Color',
-                                          TextFormField(
-                                            controller: _petColorCtrl,
-                                            decoration: _fieldDecoration('Coloque el color de su Mascota'),
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
-                                            ],
-                                            validator: (v) {
-                                              if (v == null || v.isEmpty) return 'Campo obligatorio';
-                                              if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
-                                              return null;
-                                            },
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        // _rowLabelFieldResponsive(
-                                        //   'La mascota tiene algún defecto físico o enfermedad?',
-                                        //   TextFormField(
-                                        //     decoration: _fieldDecoration(
-                                        //         'Especifique'),
-                                        //     validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
-                                        //   ),
-                                        //   isMobile,
-                                        // ),
-                                        // Variables de estado
-                                        // Widget
-                                          _rowLabelFieldResponsive(
-                                          'La mascota tiene algún defecto físico o enfermedad?',
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  // Checkbox Sí
-                                                  Expanded(
-                                                    child: RadioListTile<bool>(
-                                                      title: const Text('Sí'),
-                                                      value: true,
-                                                      groupValue: _hasDefect,
-                                                      onChanged: (val) {
-                                                        setState(() {
-                                                          _hasDefect = val;
-                                                        });
-                                                      },
-                                                    ),
-                                                  ),
-                                                  // Checkbox No
-                                                  Expanded(
-                                                    child: RadioListTile<bool>(
-                                                      title: const Text('No'),
-                                                      value: false,
-                                                      groupValue: _hasDefect,
-                                                      onChanged: (val) {
-                                                        setState(() {
-                                                          _hasDefect = val;
-                                                          _defectCtrl.clear(); // limpia si selecciona no
-                                                        });
-                                                      },
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              // Textarea solo si selecciona Sí
-                                              if (_hasDefect == true)
-                                                TextFormField(
-                                                  controller: _defectCtrl,
-                                                  maxLines: 4,
-                                                  decoration: _fieldDecoration('Especifique el defecto o enfermedad'),
-                                                  validator: (v) {
-                                                    if (_hasDefect == true && (v == null || v.isEmpty)) {
-                                                      return 'Campo obligatorio';
-                                                    }
-                                                    return null;
-                                                  },
-                                                ),
-                                            ],
-                                          ),
-                                          isMobile,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        // _rowLabelFieldResponsive(
-                                        //   'Carnet',
-                                        //   TextFormField(
-                                        //     controller: _petCarnetCtrl,
-                                        //     decoration: _fieldDecoration('Digite el numero de Carnet'),
-                                        //     validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
-                                        //   ),
-                                        //   isMobile,
-                                        // ),
-                                        _rowLabelFieldResponsive(
-                                          'Carnet',
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: RadioListTile<bool>(
-                                                      title: const Text("Sí"),
-                                                      value: true,
-                                                      groupValue: _hasCarnet,
-                                                      onChanged: (val) {
-                                                        setState(() {
-                                                          _hasCarnet = val;
-                                                          _petCarnetCtrl.clear();
-                                                        });
-                                                      },
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    child: RadioListTile<bool>(
-                                                      title: const Text("No"),
-                                                      value: false,
-                                                      groupValue: _hasCarnet,
-                                                      onChanged: (val) {
-                                                        setState(() {
-                                                          _hasCarnet = val;
-                                                          _petCarnetCtrl.clear();
-                                                        });
-                                                      },
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-
-                                              // SI: digita carnet
-                                              if (_hasCarnet == true)
-                                                TextFormField(
-                                                  controller: _petCarnetCtrl,
-                                                  decoration: _fieldDecoration('Digite el número de carnet'),
-                                                  validator: (v) {
-                                                    if (_hasCarnet == true && (v == null || v.isEmpty)) {
-                                                      return 'Campo obligatorio';
-                                                    }
-                                                    return null;
-                                                  },
-                                                ),
-
-                                              // NO: mensaje de advertencia
-                                              if (_hasCarnet == false)
-                                                Padding(
-                                                  padding: const EdgeInsets.only(top: 8.0),
-                                                  child: Text(
-                                                    "Las asistencias no serán entregadas hasta que cuente con carnet actualizado",
-                                                    style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          isMobile,
-                                        ),
-
-
-                                        const SizedBox(height: 12),
-
-                                        // Foto
-                                        Row(
-                                          children: [
-                                            _labelPill('Foto'),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: ElevatedButton.icon(
-                                                onPressed: _pickFile,
-                                                icon: const Icon(
-                                                    Icons.upload_file),
-                                                label: const Text('Subir foto'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors
-                                                      .amber[700],
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 14),
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius
-                                                          .circular(16)),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (_photoFile != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                top: 8.0),
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                'Archivo: ${_photoFile!
-                                                    .path
-                                                    .split('/')
-                                                    .last}',
-                                                style: const TextStyle(
-                                                    fontSize: 13,
-                                                    color: Colors.grey),
-                                              ),
-                                            ),
-                                          ),
-                                        const SizedBox(height: 18),
-
-                                        // Checkbox
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center, // Centrado vertical con el checkbox
-                                          children: [
-                                            Checkbox(
-                                              value: _acceptData,
-                                              onChanged: (v) {
-                                                if (v ?? false) {
-                                                  _showTermsDialog(context); // Muestra modal solo al marcar
-                                                } else {
-                                                  setState(() => _acceptData = false); // Desmarca directamente
-                                                }
-                                              },
-                                            ),
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  setState(() => _acceptData = !_acceptData);
-                                                  if (_acceptData) {
-                                                    _showTermsDialog(context);
-                                                  }
-                                                },
-                                                child: const Text(
-                                                  'He leído y comprendido sobre el tratamiento de datos personales.',
-                                                  style: TextStyle(fontSize: 13),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-
-                                        const SizedBox(height: 12),
-
-                                        // Botón Confirmar y modal de mascotas
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton(
-                                            onPressed: () async {
-                                              // Validaciones del formulario completo
-                                              if (!_acceptData) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Debes aceptar el uso de datos'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              // Validar cédula
-                                              if (_idCtrl.text.length != 10) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('La cédula debe tener 10 dígitos'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              // Validar celular
-                                              if (_phoneCtrl.text.length != 10) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('El celular debe tener 10 dígitos'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              if (_formKey.currentState?.validate() != true) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Completa todos los campos obligatorios'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              // Validar correo
-                                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                                              if (!emailRegex.hasMatch(_emailCtrl.text)) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Ingresa un correo electrónico válido'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (_photoFile == null && _photoBytes == null) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Debes subir una foto'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-
-                                              if (_hasCarnet == null) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Selecciona si la mascota tiene carnet'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Debes ingresar el número de carnet'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              // Validación adicional de campos de mascota
-                                              if (_petNameCtrl.text.isEmpty ||
-                                                  _selectedBreed == null ||
-                                                  _selectedSpecies == null ||
-                                                  _selectedGender == null ||
-                                                  _selectedBirthDate == null ||
-                                                  _petColorCtrl.text.isEmpty ||
-                                                  (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||  // Solo obligatorio si es "Sí"
-                                                  (_hasDefect == true && _defectCtrl.text.isEmpty)) {     // Solo obligatorio si es "Sí"
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Completa todos los datos de la mascota'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              // Mostrar indicador de carga
-                                              showDialog(
-                                                context: context,
-                                                barrierDismissible: false,
-                                                builder: (context) => Center(
-                                                  child: Lottie.asset(
-                                                    'lib/ui/animation/Animacion_de_carga.json',
-                                                    width: 200,
-                                                    height: 200,
-                                                    fit: BoxFit.contain,
-                                                  ),
-                                                ),
-                                              );
-
-                                              try {
-                                               // String? imageBase64;
-
-                                                String? imageBase64;
-                                                if (_photoBytes != null) {
-                                                  imageBase64 = base64Encode(_photoBytes!);
-                                                } else if (_photoFile != null) {
-                                                  final bytes = await _photoFile!.readAsBytes();
-                                                  imageBase64 = base64Encode(bytes);
-                                                }
-                                                // Convertimos fecha a String
-                                                final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
-                                                    "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
-                                                    "${_selectedBirthDate!.year}";
-
-                                                // Enviar datos al backend
-                                                final mensaje = await _formRepository.enviarDatos(
-                                                  nombre: _ownerNameCtrl.text,
-                                                  apellido: _ownerLastNameCtrl.text,
-                                                  cedula: _idCtrl.text,
-                                                  celular: _phoneCtrl.text,
-                                                  email: _emailCtrl.text,
-                                                  ciudad: _cityCtrl.text,
-                                                  contractId: widget.idContrato.toString(), // <-- se agrega aquí
-                                                  mascotas: [
-                                                    {
-                                                      'nombre': _petNameCtrl.text,
-                                                      'raza': _selectedBreed!,
-                                                      'species': _selectedSpecies!,
-                                                      'gender': _selectedGender!,
-                                                      'color': _petColorCtrl.text,
-                                                      'birth_date': _selectedBirthDate!.toIso8601String(),
-                                                      'carnet': _hasCarnet == false
-                                                          ? "No tendrá cobertura hasta que tenga carnet"
-                                                          : _petCarnetCtrl.text,  // Solo si es "Sí"
-                                                      'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
-                                                      'image_base64': imageBase64,
-                                                    }
-                                                  ],
-                                                );
-                                                print("Datos que se enviarán: $mensaje");
-
-
-
-                                                Navigator.of(context).pop(); // cerrar loader
-                                                final nombreTemp = _ownerNameCtrl.text;
-                                                final mascotaTemp = _petNameCtrl.text;
-                                                _limpiarFormularios();
-                                                // Ir a página de éxito
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => SuccessPage(
-
-                                                    ),
-                                                  ),
-                                                );
-                                                print("Nombre: ${_ownerNameCtrl.text}");
-                                                print("Mascota: ${_petNameCtrl.text}");
-
-                                                // Limpiar formulario
-
-                                                print("Nombre1: ${_ownerNameCtrl.text}");
-                                                print("Mascota2: ${_petNameCtrl.text}");
-                                              } catch (e) {
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(builder: (_) => const ErrorPage()),
-                                                );
-                                              }
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF074B5E),
-                                              padding: const EdgeInsets.symmetric(vertical: 16),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              'Confirmar',
-                                              style: TextStyle(color: Colors.white, fontSize: 16),
-                                            ),
-                                          ),
-                                        ),
-
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // Columna derecha (solo escritorio)
-                            if (!isMobile)
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: backgroundTurquoise,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-
-                                      const SizedBox(height: 100),
-                                      //TEXTO CON FRANJA
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            // Título en azul con salto de línea
-                                            const Text(
-                                              "Mantén\nProtegido",
-                                              style: TextStyle(
-                                                fontSize: 32, // más grande
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFFFFFFFF), // azul oscuro
-                                                height: 1.2, // control del interlineado
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            // Franja verde ocupando mitad de la columna
-                                            FractionallySizedBox(
-                                              widthFactor: 0.5, // la franja llega a la mitad de la columna
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                                decoration: BoxDecoration(
-                                                  color: Color(0xFF77B255), // verde
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: const Text(
-                                                  "a tu mascota",
-                                                  style: TextStyle(
-                                                    fontSize: 20, // más grande
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                  ),
-
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            // Texto descriptivo debajo
-                                            const Text(
-                                              "Durante todo el año,\n"
-                                                  "pagando menos respecto a\n"
-                                                  "los precios de los servicios\n"
-                                                  "independientes y accediendo a\n"
-                                                  "descuentos exclusivos.",
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white, // gris oscuro
-                                                height: 1.4,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 40),
-                                      // Iconos arriba
-                                      Padding(
-                                        padding: const EdgeInsets.all(12.0),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            // Imagen del perrito justo encima de la franja naranja
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Image.asset(
-                                                'lib/ui/img/Perro.png',
-                                                width: double.infinity,
-                                                height: 380,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-
-                                            //const SizedBox(height: 12),
-
-                                            // Franja naranja superior con icono y texto
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFF39C12), // naranja
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: const [
-                                                  Icon(Icons.pets, color: Colors.white, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Coberturas Veterinarias',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-
-                                            const SizedBox(height: 18),
-
-                                            // Lista de opciones con icono y texto al lado
-                                            Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 0.0),
-                                              child: Column(
-                                                children: [
-                                                  // Hospedaje
-                                                  Row(
-                                                    children: [
-                                                      Container(
-                                                        height: 42,
-                                                        width: 42,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.white.withOpacity(0.08),
-                                                          borderRadius: BorderRadius.circular(8),
-                                                        ),
-                                                        child: const Icon(Icons.local_hotel, color: Colors.white, size: 28),
-                                                      ),
-                                                      const SizedBox(width: 12),
-                                                      const Expanded(
-                                                        child: Text(
-                                                          'Hospedaje',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 15,
-                                                            fontWeight: FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-
-                                                  const SizedBox(height: 12),
-
-                                                  // Red de beneficios
-                                                  Row(
-                                                    children: [
-                                                      Container(
-                                                        height: 42,
-                                                        width: 42,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.white.withOpacity(0.08),
-                                                          borderRadius: BorderRadius.circular(8),
-                                                        ),
-                                                        child: const Icon(Icons.medical_services, color: Colors.white, size: 28),
-                                                      ),
-                                                      const SizedBox(width: 12),
-                                                      const Expanded(
-                                                        child: Text(
-                                                          'Red de beneficios',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 15,
-                                                            fontWeight: FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-
-                                                  const SizedBox(height: 12),
-
-                                                  // Atención Telefónica
-                                                  Row(
-                                                    children: [
-                                                      Container(
-                                                        height: 42,
-                                                        width: 42,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.white.withOpacity(0.08),
-                                                          borderRadius: BorderRadius.circular(8),
-                                                        ),
-                                                        child: const Icon(Icons.call, color: Colors.white, size: 28),
-                                                      ),
-                                                      const SizedBox(width: 12),
-                                                      const Expanded(
-                                                        child: Text(
-                                                          'Atención Telefónica',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 15,
-                                                            fontWeight: FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-
-                                                  const SizedBox(height: 12),
-
-                                                  // Y mucho más (icono de huesito: uso Icons.pets por defecto)
-                                                  Row(
-                                                    children: [
-                                                      Container(
-                                                        height: 42,
-                                                        width: 42,
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.white.withOpacity(0.08),
-                                                          borderRadius: BorderRadius.circular(8),
-                                                        ),
-                                                        child: const Icon(Icons.pets, color: Colors.white, size: 28),
-                                                      ),
-                                                      const SizedBox(width: 12),
-                                                      const Expanded(
-                                                        child: Text(
-                                                          'Y mucho más',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 15,
-                                                            fontWeight: FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-
-                                            // Si tu Column está dentro de otro contenedor que requiere espacio flexible:
-                                            // const Spacer(),
-                                          ],
-                                        ),
-                                      ),
-
-                                      const Spacer(),
-
-                                      // Imagen perro al final
-                                      Padding(
-                                        padding: const EdgeInsets.all(18.0),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                              12),
-                                          child: Image.asset(
-                                            'lib/ui/img/Gato.png',
-                                            width: double.infinity,
-                                            height: 350,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }),
+    return Scaffold(
+      backgroundColor: Colors.grey[200],
+      body: Center(
+        child: Container(
+          width: size.width * 0.9,
+          height: isMobile ? null : size.height * 0.85, // 👈 aquí el truco
+          constraints: isMobile
+              ? const BoxConstraints() // deja que crezca según contenido
+              : BoxConstraints(
+            maxHeight: size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 16,
+                offset: Offset(0, 8),
               ),
-            ),
+            ],
+          ),
+          child: isMobile
+              ? Column(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+                child: Image.asset(
+                  'lib/ui/img/vista_movil.png',
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView( // 👈 scroll si el form es largo
+                  child: _buildFormContainer(isMobile),
+                ),
+              ),
+            ],
+          )
+              : Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    bottomLeft: Radius.circular(24),
+                  ),
+                  child: Image.asset(
+                    'lib/ui/img/vistaEscritorio.jpg',
+                    fit: BoxFit.fitWidth,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: _buildFormContainer(isMobile),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-// Función auxiliar responsive
-  Widget _rowLabelFieldResponsive(String label, Widget field, bool isMobile) {
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  /*
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final bool isMobile = size.width < 800;
+
+    return Scaffold(
+      backgroundColor: Colors.grey[200],
+      body: Center(
+        child: Container(
+          width: size.width * 0.9,
+          height: size.height * 0.85,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: isMobile
+              ? Column(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+                child: Image.asset(
+                  'lib/ui/img/vista_movil.png',
+                  //fit: BoxFit.cover,
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                  //height: size.height * 0.35,
+                ),
+              ),
+              Expanded(
+                child: _buildFormContainer(isMobile),
+              ),
+            ],
+          )
+              : Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    bottomLeft: Radius.circular(24),
+                  ),
+                  child: Image.asset(
+                    'lib/ui/img/vistaEscritorio.jpg',
+                    fit: BoxFit.fitWidth,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: _buildFormContainer(isMobile),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+*/
+  Widget _buildFormContainer(bool isMobile) {
+    // El scroll interno solo se aplica si NO es móvil
+    final formContent = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+              child: Center(
+                child: Text(
+                  'Datos Dueño de la Mascota',
+                  style: const TextStyle(
+                    color: Color(0xFF074B5E),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            _rowLabelFieldResponsive(
+              'Nombre dueño de la mascota',
+              TextFormField(
+                controller: _ownerNameCtrl,
+                decoration: _fieldDecoration('Nombre'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Obligatorio';
+                  if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                    return 'Solo letras permitidas';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Apellido del dueño de la mascota',
+              TextFormField(
+                controller: _ownerLastNameCtrl,
+                decoration: _fieldDecoration('Apellido'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Obligatorio';
+                  if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                    return 'Solo letras permitidas';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Cédula del titular',
+              TextFormField(
+                controller: _idCtrl,
+                decoration: _fieldDecoration('Cédula'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Campo obligatorio';
+                  if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                  if (v.length != 10) return 'Debe tener 10 dígitos';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Celular',
+              TextFormField(
+                controller: _phoneCtrl,
+                decoration: _fieldDecoration('Celular'),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Campo obligatorio';
+                  if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                  if (v.length != 10) return 'Debe tener 10 dígitos';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'E-mail',
+              TextFormField(
+                controller: _emailCtrl,
+                focusNode: _emailFocus,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _fieldDecoration('Correo Electrónico').copyWith(
+                  errorText: _emailError,
+                ),
+              ),
+              isMobile,
+            ),
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Ciudad',
+              TextFormField(
+                controller: _cityCtrl,
+                decoration: _fieldDecoration('Ciudad'),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Campo obligatorio';
+                  if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                    return 'Solo letras permitidas';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+
+            const SizedBox(height: 20),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+              child: Center(
+                child: Text(
+                  'Datos de la Mascota',
+                  style: const TextStyle(
+                    color: Color(0xFF074B5E),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            if (_mascotas.isNotEmpty)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(label: Text('Nombre')),
+                        DataColumn(label: Text('Especie')),
+                        DataColumn(label: Text('Raza')),
+                        DataColumn(label: Text('Color')),
+                        DataColumn(label: Text('Carnet')),
+                        DataColumn(label: Text('Acciones')),
+                      ],
+                      rows: _mascotas.map((m) {
+                        return DataRow(cells: [
+                          DataCell(Text(m['nombre']!)),
+                          DataCell(Text(m['species']!)),
+                          DataCell(Text(m['raza']!)),
+                          DataCell(Text(m['color']!)),
+                          DataCell(Text(m['carnet']!)),
+                          DataCell(
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  _mascotas.remove(m);
+                                });
+                              },
+                            ),
+                          ),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Nombre de la mascota',
+              TextFormField(
+                controller: _petNameCtrl,
+                decoration: _fieldDecoration('Nombre de la Mascota'),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Campo obligatorio';
+                  if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+            const SizedBox(height: 12),
+
+
+            _rowLabelFieldResponsive(
+              'Género',
+              DropdownButtonFormField<String>(
+                value: _selectedGender,
+                decoration: _fieldDecoration(
+                    'Seleccione'),
+                items: _genders
+                    .map((gender) =>
+                    DropdownMenuItem(value: gender,
+                        child: Text(gender)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedGender = value;
+                  });
+                },
+                validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+              ),
+              isMobile,
+            ),
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Especie',
+              DropdownButtonFormField<String>(
+                value: _selectedSpecies,
+                decoration: _fieldDecoration(
+                    'Seleccione'),
+                items: _species
+                    .map((specie) =>
+                    DropdownMenuItem(
+                        value: specie,
+                        child: Text(specie)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSpecies = value;
+                    _selectedBreed = null;
+                  });
+                },
+                validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+              ),
+              isMobile,
+            ),
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Raza',
+              DropdownButtonFormField<String>(
+                value: _selectedBreed,
+                decoration: _fieldDecoration(
+                    'Seleccione'),
+                items: (_selectedSpecies != null
+                    ? _breeds[_selectedSpecies!] ??
+                    <String>[]
+                    : <String>[])
+                    .map((breed) =>
+                    DropdownMenuItem(
+                        value: breed,
+                        child: Text(breed)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedBreed = value;
+                  });
+                },
+                validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+              ),
+              isMobile,
+            ),
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Fecha de nacimiento',
+              Builder(
+                builder: (context) {
+                  return TextFormField(
+                    controller: _birthDateCtrl,
+                    readOnly: true,
+                    decoration: _fieldDecoration('Selecciona fecha'),
+                    onTap: () async {
+                      FocusScope.of(context).requestFocus(FocusNode());
+
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime.now(),
+                        locale: const Locale('es', 'ES'),
+                      );
+
+                      if (pickedDate != null) {
+                        setState(() {
+                          _selectedBirthDate = pickedDate;
+                          _birthDateCtrl.text = "${pickedDate.day.toString().padLeft(2, '0')}/"
+                              "${pickedDate.month.toString().padLeft(2, '0')}/"
+                              "${pickedDate.year} | ${_calculateAge(pickedDate)}";
+
+                        });
+                      }
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  );
+                },
+              ),
+              isMobile,
+            ),
+
+
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'Color',
+              TextFormField(
+                controller: _petColorCtrl,
+                decoration: _fieldDecoration('Coloque el color de su Mascota'),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                ],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Campo obligatorio';
+                  if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                  return null;
+                },
+              ),
+              isMobile,
+            ),
+            const SizedBox(height: 12),
+            _rowLabelFieldResponsive(
+              'La mascota tiene algún defecto físico o enfermedad?',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: _hasDefect == null ? null : (_hasDefect! ? 'Sí' : 'No'),
+                    decoration: _fieldDecoration('Seleccione'),
+                    items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _hasDefect = (val == 'Sí');
+                        if (_hasDefect == false) _defectCtrl.clear();
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                  ),
+                  if (_hasDefect == true) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _defectCtrl,
+                      maxLines: 4,
+                      decoration: _fieldDecoration('Especifique el defecto o enfermedad'),
+                      validator: (v) {
+                        if (_hasDefect == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                        return null;
+                      },
+                    ),
+                  ],
+                ],
+              ),
+              isMobile,
+              maxLines: 4,
+            ),
+
+            const SizedBox(height: 12),
+
+            _rowLabelFieldResponsive(
+              'Carnet',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: _hasCarnet == null ? null : (_hasCarnet! ? 'Sí' : 'No'),
+                    decoration: _fieldDecoration('Seleccione'),
+                    items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _hasCarnet = (val == 'Sí');
+                        if (_hasCarnet != true) _petCarnetCtrl.clear();
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                  ),
+                  if (_hasCarnet == true) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _petCarnetCtrl,
+                      decoration: _fieldDecoration('Digite el número de carnet'),
+                      validator: (v) {
+                        if (_hasCarnet == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                        return null;
+                      },
+                    ),
+                  ] else if (_hasCarnet == false) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: EdgeInsets.only(top: 0),
+                      child: Text(
+                        "Las asistencias no serán entregadas hasta que cuente con carnet actualizado",
+                        style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              isMobile,
+              maxLines: 4,
+            ),
+
+
+            const SizedBox(height: 12),
+
+            _rowLabelFieldResponsive(
+              'Foto',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 45,
+                    child: ElevatedButton.icon(
+                      onPressed: _pickFile,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Subir foto'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
+                      ),
+
+                    ),
+                  ),
+                  if (_photoFile != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Archivo: ${_photoFile!.path.split('/').last}',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+              isMobile,
+            ),
+
+            if (_photoFile != null)
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 8.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Archivo: ${_photoFile!
+                        .path
+                        .split('/')
+                        .last}',
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 18),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Checkbox(
+                  value: _acceptData,
+                  onChanged: (v) {
+                    if (v ?? false) {
+                      _showTermsDialog(context);
+                    } else {
+                      setState(() => _acceptData = false);
+                    }
+                  },
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _acceptData = !_acceptData);
+                      if (_acceptData) {
+                        _showTermsDialog(context);
+                      }
+                    },
+                    child: const Text(
+                      'He leído y comprendido sobre el tratamiento de datos personales.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+
+                  if (!_acceptData) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Debes aceptar el uso de datos'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (_idCtrl.text.length != 10) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('La cédula debe tener 10 dígitos'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+
+                  if (_phoneCtrl.text.length != 10) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('El celular debe tener 10 dígitos'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (_formKey.currentState?.validate() != true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Completa todos los campos obligatorios'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(_emailCtrl.text)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Ingresa un correo electrónico válido'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+                  if (_photoFile == null && _photoBytes == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Debes subir una foto'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+
+                  if (_hasCarnet == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Selecciona si la mascota tiene carnet'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+                  if (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Debes ingresar el número de carnet'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (_petNameCtrl.text.isEmpty ||
+                      _selectedBreed == null ||
+                      _selectedSpecies == null ||
+                      _selectedGender == null ||
+                      _selectedBirthDate == null ||
+                      _petColorCtrl.text.isEmpty ||
+                      (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||
+                      (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Completa todos los datos de la mascota'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => Center(
+                      child: Lottie.asset(
+                        'lib/ui/animation/Animacion_de_carga.json',
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  );
+
+                  try {
+                    // String? imageBase64;
+
+                    String? imageBase64;
+                    if (_photoBytes != null) {
+                      imageBase64 = base64Encode(_photoBytes!);
+                    } else if (_photoFile != null) {
+                      final bytes = await _photoFile!.readAsBytes();
+                      imageBase64 = base64Encode(bytes);
+                    }
+                    final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
+                        "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
+                        "${_selectedBirthDate!.year}";
+
+                    final mensaje = await _formRepository.enviarDatos(
+                      nombre: _ownerNameCtrl.text,
+                      apellido: _ownerLastNameCtrl.text,
+                      cedula: _idCtrl.text,
+                      celular: _phoneCtrl.text,
+                      email: _emailCtrl.text,
+                      ciudad: _cityCtrl.text,
+                      contractId: widget.idContrato.toString(),
+                      mascotas: [
+                        {
+                          'nombre': _petNameCtrl.text,
+                          'raza': _selectedBreed!,
+                          'species': _selectedSpecies!,
+                          'gender': _selectedGender!,
+                          'color': _petColorCtrl.text,
+                          'birth_date': _selectedBirthDate!.toIso8601String(),
+                          'carnet': _hasCarnet == false
+                              ? "No tendrá cobertura hasta que tenga carnet"
+                              : _petCarnetCtrl.text,
+                          'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
+                          'image_base64': imageBase64,
+                        }
+                      ],
+                    );
+                    print("Datos que se enviarán: $mensaje");
+
+
+
+                    Navigator.of(context).pop();
+                    final nombreTemp = _ownerNameCtrl.text;
+                    final mascotaTemp = _petNameCtrl.text;
+                    _limpiarFormularios();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SuccessPage(
+
+                        ),
+                      ),
+                    );
+                    print("Nombre: ${_ownerNameCtrl.text}");
+                    print("Mascota: ${_petNameCtrl.text}");
+
+                    // Limpiar formulario
+
+                    print("Nombre1: ${_ownerNameCtrl.text}");
+                    print("Mascota2: ${_petNameCtrl.text}");
+                  } catch (e) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ErrorPage()),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF074B5E),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Confirmar',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: isMobile
+          ? formContent // móvil sin scroll interno
+          : SingleChildScrollView(
+        child: formContent, // escritorio con scroll interno si es necesario
+      ),
+    );
+  }
+
+
+/*
+  Widget _buildFormContainer(bool isMobile) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: isMobile
+            ? Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                child: Center(
+                  child: Text(
+                    'Datos Dueño de la Mascota',
+                    style: const TextStyle(
+                      color: Color(0xFF074B5E),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+              _rowLabelFieldResponsive(
+                'Nombre dueño de la mascota',
+                TextFormField(
+                  controller: _ownerNameCtrl,
+                  decoration: _fieldDecoration('Nombre'),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obligatorio';
+                    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                      return 'Solo letras permitidas';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Apellido del dueño de la mascota',
+                TextFormField(
+                  controller: _ownerLastNameCtrl,
+                  decoration: _fieldDecoration('Apellido'),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obligatorio';
+                    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                      return 'Solo letras permitidas';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Cédula del titular',
+                TextFormField(
+                  controller: _idCtrl,
+                  decoration: _fieldDecoration('Cédula'),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Campo obligatorio';
+                    if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                    if (v.length != 10) return 'Debe tener 10 dígitos';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Celular',
+                TextFormField(
+                  controller: _phoneCtrl,
+                  decoration: _fieldDecoration('Celular'),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Campo obligatorio';
+                    if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                    if (v.length != 10) return 'Debe tener 10 dígitos';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'E-mail',
+                TextFormField(
+                  controller: _emailCtrl,
+                  focusNode: _emailFocus,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: _fieldDecoration('Correo Electrónico').copyWith(
+                    errorText: _emailError,
+                  ),
+                ),
+                isMobile,
+              ),
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Ciudad',
+                TextFormField(
+                  controller: _cityCtrl,
+                  decoration: _fieldDecoration('Ciudad'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Campo obligatorio';
+                    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                      return 'Solo letras permitidas';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+
+              const SizedBox(height: 20),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                child: Center(
+                  child: Text(
+                    'Datos de la Mascota',
+                    style: const TextStyle(
+                      color: Color(0xFF074B5E),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              if (_mascotas.isNotEmpty)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Nombre')),
+                          DataColumn(label: Text('Especie')),
+                          DataColumn(label: Text('Raza')),
+                          DataColumn(label: Text('Color')),
+                          DataColumn(label: Text('Carnet')),
+                          DataColumn(label: Text('Acciones')),
+                        ],
+                        rows: _mascotas.map((m) {
+                          return DataRow(cells: [
+                            DataCell(Text(m['nombre']!)),
+                            DataCell(Text(m['species']!)),
+                            DataCell(Text(m['raza']!)),
+                            DataCell(Text(m['color']!)),
+                            DataCell(Text(m['carnet']!)),
+                            DataCell(
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    _mascotas.remove(m);
+                                  });
+                                },
+                              ),
+                            ),
+                          ]);
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Nombre de la mascota',
+                TextFormField(
+                  controller: _petNameCtrl,
+                  decoration: _fieldDecoration('Nombre de la Mascota'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Campo obligatorio';
+                    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+              const SizedBox(height: 12),
+
+
+              _rowLabelFieldResponsive(
+                'Género',
+                DropdownButtonFormField<String>(
+                  value: _selectedGender,
+                  decoration: _fieldDecoration(
+                      'Seleccione'),
+                  items: _genders
+                      .map((gender) =>
+                      DropdownMenuItem(value: gender,
+                          child: Text(gender)))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedGender = value;
+                    });
+                  },
+                  validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                ),
+                isMobile,
+              ),
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Especie',
+                DropdownButtonFormField<String>(
+                  value: _selectedSpecies,
+                  decoration: _fieldDecoration(
+                      'Seleccione'),
+                  items: _species
+                      .map((specie) =>
+                      DropdownMenuItem(
+                          value: specie,
+                          child: Text(specie)))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSpecies = value;
+                      _selectedBreed = null;
+                    });
+                  },
+                  validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                ),
+                isMobile,
+              ),
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Raza',
+                DropdownButtonFormField<String>(
+                  value: _selectedBreed,
+                  decoration: _fieldDecoration(
+                      'Seleccione'),
+                  items: (_selectedSpecies != null
+                      ? _breeds[_selectedSpecies!] ??
+                      <String>[]
+                      : <String>[])
+                      .map((breed) =>
+                      DropdownMenuItem(
+                          value: breed,
+                          child: Text(breed)))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBreed = value;
+                    });
+                  },
+                  validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                ),
+                isMobile,
+              ),
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Fecha de nacimiento',
+                Builder(
+                  builder: (context) {
+                    return TextFormField(
+                      controller: _birthDateCtrl,
+                      readOnly: true,
+                      decoration: _fieldDecoration('Selecciona fecha'),
+                      onTap: () async {
+                        FocusScope.of(context).requestFocus(FocusNode());
+
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                          locale: const Locale('es', 'ES'),
+                        );
+
+                        if (pickedDate != null) {
+                          setState(() {
+                            _selectedBirthDate = pickedDate;
+                            _birthDateCtrl.text = "${pickedDate.day.toString().padLeft(2, '0')}/"
+                                "${pickedDate.month.toString().padLeft(2, '0')}/"
+                                "${pickedDate.year} | ${_calculateAge(pickedDate)}";
+
+                          });
+                        }
+                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                    );
+                  },
+                ),
+                isMobile,
+              ),
+
+
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'Color',
+                TextFormField(
+                  controller: _petColorCtrl,
+                  decoration: _fieldDecoration('Coloque el color de su Mascota'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Campo obligatorio';
+                    if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                    return null;
+                  },
+                ),
+                isMobile,
+              ),
+              const SizedBox(height: 12),
+              _rowLabelFieldResponsive(
+                'La mascota tiene algún defecto físico o enfermedad?',
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _hasDefect == null ? null : (_hasDefect! ? 'Sí' : 'No'),
+                      decoration: _fieldDecoration('Seleccione'),
+                      items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _hasDefect = (val == 'Sí');
+                          if (_hasDefect == false) _defectCtrl.clear();
+                        });
+                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                    ),
+                    if (_hasDefect == true) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _defectCtrl,
+                        maxLines: 4,
+                        decoration: _fieldDecoration('Especifique el defecto o enfermedad'),
+                        validator: (v) {
+                          if (_hasDefect == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+                isMobile,
+                maxLines: 4,
+              ),
+
+              const SizedBox(height: 12),
+
+              _rowLabelFieldResponsive(
+                'Carnet',
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _hasCarnet == null ? null : (_hasCarnet! ? 'Sí' : 'No'),
+                      decoration: _fieldDecoration('Seleccione'),
+                      items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _hasCarnet = (val == 'Sí');
+                          if (_hasCarnet != true) _petCarnetCtrl.clear();
+                        });
+                      },
+                      validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                    ),
+                    if (_hasCarnet == true) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _petCarnetCtrl,
+                        decoration: _fieldDecoration('Digite el número de carnet'),
+                        validator: (v) {
+                          if (_hasCarnet == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                          return null;
+                        },
+                      ),
+                    ] else if (_hasCarnet == false) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: EdgeInsets.only(top: 0),
+                        child: Text(
+                          "Las asistencias no serán entregadas hasta que cuente con carnet actualizado",
+                          style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                isMobile,
+                maxLines: 4,
+              ),
+
+
+              const SizedBox(height: 12),
+
+              _rowLabelFieldResponsive(
+                'Foto',
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 45,
+                      child: ElevatedButton.icon(
+                        onPressed: _pickFile,
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('Subir foto'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber[700],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          ),
+                        ),
+
+                      ),
+                    ),
+                    if (_photoFile != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Archivo: ${_photoFile!.path.split('/').last}',
+                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+                isMobile,
+              ),
+
+              if (_photoFile != null)
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 8.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Archivo: ${_photoFile!
+                          .path
+                          .split('/')
+                          .last}',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 18),
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Checkbox(
+                    value: _acceptData,
+                    onChanged: (v) {
+                      if (v ?? false) {
+                        _showTermsDialog(context);
+                      } else {
+                        setState(() => _acceptData = false);
+                      }
+                    },
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _acceptData = !_acceptData);
+                        if (_acceptData) {
+                          _showTermsDialog(context);
+                        }
+                      },
+                      child: const Text(
+                        'He leído y comprendido sobre el tratamiento de datos personales.',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+
+                    if (!_acceptData) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes aceptar el uso de datos'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (_idCtrl.text.length != 10) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('La cédula debe tener 10 dígitos'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+
+                    if (_phoneCtrl.text.length != 10) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('El celular debe tener 10 dígitos'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (_formKey.currentState?.validate() != true) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Completa todos los campos obligatorios'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!emailRegex.hasMatch(_emailCtrl.text)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Ingresa un correo electrónico válido'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (_photoFile == null && _photoBytes == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes subir una foto'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+
+                    if (_hasCarnet == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Selecciona si la mascota tiene carnet'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Debes ingresar el número de carnet'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (_petNameCtrl.text.isEmpty ||
+                        _selectedBreed == null ||
+                        _selectedSpecies == null ||
+                        _selectedGender == null ||
+                        _selectedBirthDate == null ||
+                        _petColorCtrl.text.isEmpty ||
+                        (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||
+                        (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Completa todos los datos de la mascota'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => Center(
+                        child: Lottie.asset(
+                          'lib/ui/animation/Animacion_de_carga.json',
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    );
+
+                    try {
+                      // String? imageBase64;
+
+                      String? imageBase64;
+                      if (_photoBytes != null) {
+                        imageBase64 = base64Encode(_photoBytes!);
+                      } else if (_photoFile != null) {
+                        final bytes = await _photoFile!.readAsBytes();
+                        imageBase64 = base64Encode(bytes);
+                      }
+                      final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
+                          "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
+                          "${_selectedBirthDate!.year}";
+
+                      final mensaje = await _formRepository.enviarDatos(
+                        nombre: _ownerNameCtrl.text,
+                        apellido: _ownerLastNameCtrl.text,
+                        cedula: _idCtrl.text,
+                        celular: _phoneCtrl.text,
+                        email: _emailCtrl.text,
+                        ciudad: _cityCtrl.text,
+                        contractId: widget.idContrato.toString(),
+                        mascotas: [
+                          {
+                            'nombre': _petNameCtrl.text,
+                            'raza': _selectedBreed!,
+                            'species': _selectedSpecies!,
+                            'gender': _selectedGender!,
+                            'color': _petColorCtrl.text,
+                            'birth_date': _selectedBirthDate!.toIso8601String(),
+                            'carnet': _hasCarnet == false
+                                ? "No tendrá cobertura hasta que tenga carnet"
+                                : _petCarnetCtrl.text,
+                            'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
+                            'image_base64': imageBase64,
+                          }
+                        ],
+                      );
+                      print("Datos que se enviarán: $mensaje");
+
+
+
+                      Navigator.of(context).pop();
+                      final nombreTemp = _ownerNameCtrl.text;
+                      final mascotaTemp = _petNameCtrl.text;
+                      _limpiarFormularios();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SuccessPage(
+
+                          ),
+                        ),
+                      );
+                      print("Nombre: ${_ownerNameCtrl.text}");
+                      print("Mascota: ${_petNameCtrl.text}");
+
+                      // Limpiar formulario
+
+                      print("Nombre1: ${_ownerNameCtrl.text}");
+                      print("Mascota2: ${_petNameCtrl.text}");
+                    } catch (e) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ErrorPage()),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF074B5E),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Confirmar',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+
+          ),
+        )
+            : SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                  child: Center(
+                    child: Text(
+                      'Datos Dueño de la Mascota',
+                      style: const TextStyle(
+                        color: Color(0xFF074B5E),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+                _rowLabelFieldResponsive(
+                  'Nombre dueño de la mascota',
+                  TextFormField(
+                    controller: _ownerNameCtrl,
+                    decoration: _fieldDecoration('Nombre'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                        return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Apellido del dueño de la mascota',
+                  TextFormField(
+                    controller: _ownerLastNameCtrl,
+                    decoration: _fieldDecoration('Apellido'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                        return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Cédula del titular',
+                  TextFormField(
+                    controller: _idCtrl,
+                    decoration: _fieldDecoration('Cédula'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                      if (v.length != 10) return 'Debe tener 10 dígitos';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Celular',
+                  TextFormField(
+                    controller: _phoneCtrl,
+                    decoration: _fieldDecoration('Celular'),
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                      if (v.length != 10) return 'Debe tener 10 dígitos';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'E-mail',
+                  TextFormField(
+                    controller: _emailCtrl,
+                    focusNode: _emailFocus,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: _fieldDecoration('Correo Electrónico').copyWith(
+                      errorText: _emailError,
+                    ),
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Ciudad',
+                  TextFormField(
+                    controller: _cityCtrl,
+                    decoration: _fieldDecoration('Ciudad'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                        return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 20),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                  child: Center(
+                    child: Text(
+                      'Datos de la Mascota',
+                      style: const TextStyle(
+                        color: Color(0xFF074B5E),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                if (_mascotas.isNotEmpty)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Nombre')),
+                            DataColumn(label: Text('Especie')),
+                            DataColumn(label: Text('Raza')),
+                            DataColumn(label: Text('Color')),
+                            DataColumn(label: Text('Carnet')),
+                            DataColumn(label: Text('Acciones')),
+                          ],
+                          rows: _mascotas.map((m) {
+                            return DataRow(cells: [
+                              DataCell(Text(m['nombre']!)),
+                              DataCell(Text(m['species']!)),
+                              DataCell(Text(m['raza']!)),
+                              DataCell(Text(m['color']!)),
+                              DataCell(Text(m['carnet']!)),
+                              DataCell(
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    setState(() {
+                                      _mascotas.remove(m);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ]);
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Nombre de la mascota',
+                  TextFormField(
+                    controller: _petNameCtrl,
+                    decoration: _fieldDecoration('Nombre de la Mascota'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+
+
+                _rowLabelFieldResponsive(
+                  'Género',
+                  DropdownButtonFormField<String>(
+                    value: _selectedGender,
+                    decoration: _fieldDecoration(
+                        'Seleccione'),
+                    items: _genders
+                        .map((gender) =>
+                        DropdownMenuItem(value: gender,
+                            child: Text(gender)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedGender = value;
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Especie',
+                  DropdownButtonFormField<String>(
+                    value: _selectedSpecies,
+                    decoration: _fieldDecoration(
+                        'Seleccione'),
+                    items: _species
+                        .map((specie) =>
+                        DropdownMenuItem(
+                            value: specie,
+                            child: Text(specie)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSpecies = value;
+                        _selectedBreed = null;
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Raza',
+                  DropdownButtonFormField<String>(
+                    value: _selectedBreed,
+                    decoration: _fieldDecoration(
+                        'Seleccione'),
+                    items: (_selectedSpecies != null
+                        ? _breeds[_selectedSpecies!] ??
+                        <String>[]
+                        : <String>[])
+                        .map((breed) =>
+                        DropdownMenuItem(
+                            value: breed,
+                            child: Text(breed)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedBreed = value;
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Fecha de nacimiento',
+                  Builder(
+                    builder: (context) {
+                      return TextFormField(
+                        controller: _birthDateCtrl,
+                        readOnly: true,
+                        decoration: _fieldDecoration('Selecciona fecha'),
+                        onTap: () async {
+                          FocusScope.of(context).requestFocus(FocusNode());
+
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                            locale: const Locale('es', 'ES'),
+                          );
+
+                          if (pickedDate != null) {
+                            setState(() {
+                              _selectedBirthDate = pickedDate;
+                              _birthDateCtrl.text = "${pickedDate.day.toString().padLeft(2, '0')}/"
+                                  "${pickedDate.month.toString().padLeft(2, '0')}/"
+                                  "${pickedDate.year} | ${_calculateAge(pickedDate)}";
+
+                            });
+                          }
+                        },
+                        validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                      );
+                    },
+                  ),
+                  isMobile,
+                ),
+
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Color',
+                  TextFormField(
+                    controller: _petColorCtrl,
+                    decoration: _fieldDecoration('Coloque el color de su Mascota'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'La mascota tiene algún defecto físico o enfermedad?',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _hasDefect == null ? null : (_hasDefect! ? 'Sí' : 'No'),
+                        decoration: _fieldDecoration('Seleccione'),
+                        items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _hasDefect = (val == 'Sí');
+                            if (_hasDefect == false) _defectCtrl.clear();
+                          });
+                        },
+                        validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                      ),
+                      if (_hasDefect == true) ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _defectCtrl,
+                          maxLines: 4,
+                          decoration: _fieldDecoration('Especifique el defecto o enfermedad'),
+                          validator: (v) {
+                            if (_hasDefect == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                            return null;
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                  isMobile,
+                  maxLines: 4,
+                ),
+
+                const SizedBox(height: 12),
+
+                _rowLabelFieldResponsive(
+                  'Carnet',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _hasCarnet == null ? null : (_hasCarnet! ? 'Sí' : 'No'),
+                        decoration: _fieldDecoration('Seleccione'),
+                        items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _hasCarnet = (val == 'Sí');
+                            if (_hasCarnet != true) _petCarnetCtrl.clear();
+                          });
+                        },
+                        validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                      ),
+                      if (_hasCarnet == true) ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _petCarnetCtrl,
+                          decoration: _fieldDecoration('Digite el número de carnet'),
+                          validator: (v) {
+                            if (_hasCarnet == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                            return null;
+                          },
+                        ),
+                      ] else if (_hasCarnet == false) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: EdgeInsets.only(top: 0),
+                          child: Text(
+                            "Las asistencias no serán entregadas hasta que cuente con carnet actualizado",
+                            style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  isMobile,
+                  maxLines: 4,
+                ),
+
+
+                const SizedBox(height: 12),
+
+                _rowLabelFieldResponsive(
+                  'Foto',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton.icon(
+                          onPressed: _pickFile,
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('Subir foto'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber[700],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
+                            ),
+                          ),
+
+                        ),
+                      ),
+                      if (_photoFile != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Archivo: ${_photoFile!.path.split('/').last}',
+                          style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                  isMobile,
+                ),
+
+                if (_photoFile != null)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                        top: 8.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Archivo: ${_photoFile!
+                            .path
+                            .split('/')
+                            .last}',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 18),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: _acceptData,
+                      onChanged: (v) {
+                        if (v ?? false) {
+                          _showTermsDialog(context);
+                        } else {
+                          setState(() => _acceptData = false);
+                        }
+                      },
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _acceptData = !_acceptData);
+                          if (_acceptData) {
+                            _showTermsDialog(context);
+                          }
+                        },
+                        child: const Text(
+                          'He leído y comprendido sobre el tratamiento de datos personales.',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+
+                      if (!_acceptData) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes aceptar el uso de datos'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_idCtrl.text.length != 10) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('La cédula debe tener 10 dígitos'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+
+                      if (_phoneCtrl.text.length != 10) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('El celular debe tener 10 dígitos'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_formKey.currentState?.validate() != true) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Completa todos los campos obligatorios'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(_emailCtrl.text)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Ingresa un correo electrónico válido'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      if (_photoFile == null && _photoBytes == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes subir una foto'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+
+                      if (_hasCarnet == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Selecciona si la mascota tiene carnet'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      if (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes ingresar el número de carnet'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_petNameCtrl.text.isEmpty ||
+                          _selectedBreed == null ||
+                          _selectedSpecies == null ||
+                          _selectedGender == null ||
+                          _selectedBirthDate == null ||
+                          _petColorCtrl.text.isEmpty ||
+                          (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||
+                          (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Completa todos los datos de la mascota'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => Center(
+                          child: Lottie.asset(
+                            'lib/ui/animation/Animacion_de_carga.json',
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      );
+
+                      try {
+                        // String? imageBase64;
+
+                        String? imageBase64;
+                        if (_photoBytes != null) {
+                          imageBase64 = base64Encode(_photoBytes!);
+                        } else if (_photoFile != null) {
+                          final bytes = await _photoFile!.readAsBytes();
+                          imageBase64 = base64Encode(bytes);
+                        }
+                        final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
+                            "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
+                            "${_selectedBirthDate!.year}";
+
+                        final mensaje = await _formRepository.enviarDatos(
+                          nombre: _ownerNameCtrl.text,
+                          apellido: _ownerLastNameCtrl.text,
+                          cedula: _idCtrl.text,
+                          celular: _phoneCtrl.text,
+                          email: _emailCtrl.text,
+                          ciudad: _cityCtrl.text,
+                          contractId: widget.idContrato.toString(),
+                          mascotas: [
+                            {
+                              'nombre': _petNameCtrl.text,
+                              'raza': _selectedBreed!,
+                              'species': _selectedSpecies!,
+                              'gender': _selectedGender!,
+                              'color': _petColorCtrl.text,
+                              'birth_date': _selectedBirthDate!.toIso8601String(),
+                              'carnet': _hasCarnet == false
+                                  ? "No tendrá cobertura hasta que tenga carnet"
+                                  : _petCarnetCtrl.text,
+                              'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
+                              'image_base64': imageBase64,
+                            }
+                          ],
+                        );
+                        print("Datos que se enviarán: $mensaje");
+
+
+
+                        Navigator.of(context).pop();
+                        final nombreTemp = _ownerNameCtrl.text;
+                        final mascotaTemp = _petNameCtrl.text;
+                        _limpiarFormularios();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SuccessPage(
+
+                            ),
+                          ),
+                        );
+                        print("Nombre: ${_ownerNameCtrl.text}");
+                        print("Mascota: ${_petNameCtrl.text}");
+
+                        // Limpiar formulario
+
+                        print("Nombre1: ${_ownerNameCtrl.text}");
+                        print("Mascota2: ${_petNameCtrl.text}");
+                      } catch (e) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ErrorPage()),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF074B5E),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Confirmar',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+*/
+/*
+  Widget _buildFormContainer(bool isMobile) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                  child: Center(
+                    child: Text(
+                      'Datos Dueño de la Mascota',
+                      style: const TextStyle(
+                        color: Color(0xFF074B5E),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+                _rowLabelFieldResponsive(
+                  'Nombre dueño de la mascota',
+                  TextFormField(
+                    controller: _ownerNameCtrl,
+                    decoration: _fieldDecoration('Nombre'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                        return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Apellido del dueño de la mascota',
+                  TextFormField(
+                    controller: _ownerLastNameCtrl,
+                    decoration: _fieldDecoration('Apellido'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                        return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Cédula del titular',
+                  TextFormField(
+                    controller: _idCtrl,
+                    decoration: _fieldDecoration('Cédula'),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                      if (v.length != 10) return 'Debe tener 10 dígitos';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Celular',
+                  TextFormField(
+                    controller: _phoneCtrl,
+                    decoration: _fieldDecoration('Celular'),
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+                      if (v.length != 10) return 'Debe tener 10 dígitos';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'E-mail',
+                  TextFormField(
+                    controller: _emailCtrl,
+                    focusNode: _emailFocus,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: _fieldDecoration('Correo Electrónico').copyWith(
+                      errorText: _emailError,
+                    ),
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Ciudad',
+                  TextFormField(
+                    controller: _cityCtrl,
+                    decoration: _fieldDecoration('Ciudad'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+                        return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+
+                const SizedBox(height: 20),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+                  child: Center(
+                    child: Text(
+                      'Datos de la Mascota',
+                      style: const TextStyle(
+                        color: Color(0xFF074B5E),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                if (_mascotas.isNotEmpty)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text('Nombre')),
+                            DataColumn(label: Text('Especie')),
+                            DataColumn(label: Text('Raza')),
+                            DataColumn(label: Text('Color')),
+                            DataColumn(label: Text('Carnet')),
+                            DataColumn(label: Text('Acciones')),
+                          ],
+                          rows: _mascotas.map((m) {
+                            return DataRow(cells: [
+                              DataCell(Text(m['nombre']!)),
+                              DataCell(Text(m['species']!)),
+                              DataCell(Text(m['raza']!)),
+                              DataCell(Text(m['color']!)),
+                              DataCell(Text(m['carnet']!)),
+                              DataCell(
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    setState(() {
+                                      _mascotas.remove(m);
+                                    });
+                                  },
+                                ),
+                              ),
+                            ]);
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Nombre de la mascota',
+                  TextFormField(
+                    controller: _petNameCtrl,
+                    decoration: _fieldDecoration('Nombre de la Mascota'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+
+
+                _rowLabelFieldResponsive(
+                  'Género',
+                  DropdownButtonFormField<String>(
+                    value: _selectedGender,
+                    decoration: _fieldDecoration(
+                        'Seleccione'),
+                    items: _genders
+                        .map((gender) =>
+                        DropdownMenuItem(value: gender,
+                            child: Text(gender)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedGender = value;
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Especie',
+                  DropdownButtonFormField<String>(
+                    value: _selectedSpecies,
+                    decoration: _fieldDecoration(
+                        'Seleccione'),
+                    items: _species
+                        .map((specie) =>
+                        DropdownMenuItem(
+                            value: specie,
+                            child: Text(specie)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSpecies = value;
+                        _selectedBreed = null;
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Raza',
+                  DropdownButtonFormField<String>(
+                    value: _selectedBreed,
+                    decoration: _fieldDecoration(
+                        'Seleccione'),
+                    items: (_selectedSpecies != null
+                        ? _breeds[_selectedSpecies!] ??
+                        <String>[]
+                        : <String>[])
+                        .map((breed) =>
+                        DropdownMenuItem(
+                            value: breed,
+                            child: Text(breed)))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedBreed = value;
+                      });
+                    },
+                    validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Fecha de nacimiento',
+                  Builder(
+                    builder: (context) {
+                      return TextFormField(
+                        controller: _birthDateCtrl,
+                        readOnly: true,
+                        decoration: _fieldDecoration('Selecciona fecha'),
+                        onTap: () async {
+                          FocusScope.of(context).requestFocus(FocusNode());
+
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                            locale: const Locale('es', 'ES'),
+                          );
+
+                          if (pickedDate != null) {
+                            setState(() {
+                              _selectedBirthDate = pickedDate;
+                              _birthDateCtrl.text = "${pickedDate.day.toString().padLeft(2, '0')}/"
+                                  "${pickedDate.month.toString().padLeft(2, '0')}/"
+                                  "${pickedDate.year} | ${_calculateAge(pickedDate)}";
+
+                            });
+                          }
+                        },
+                        validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
+                      );
+                    },
+                  ),
+                  isMobile,
+                ),
+
+
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'Color',
+                  TextFormField(
+                    controller: _petColorCtrl,
+                    decoration: _fieldDecoration('Coloque el color de su Mascota'),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Campo obligatorio';
+                      if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v)) return 'Solo letras permitidas';
+                      return null;
+                    },
+                  ),
+                  isMobile,
+                ),
+                const SizedBox(height: 12),
+                _rowLabelFieldResponsive(
+                  'La mascota tiene algún defecto físico o enfermedad?',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _hasDefect == null ? null : (_hasDefect! ? 'Sí' : 'No'),
+                        decoration: _fieldDecoration('Seleccione'),
+                        items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _hasDefect = (val == 'Sí');
+                            if (_hasDefect == false) _defectCtrl.clear();
+                          });
+                        },
+                        validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                      ),
+                      if (_hasDefect == true) ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _defectCtrl,
+                          maxLines: 4,
+                          decoration: _fieldDecoration('Especifique el defecto o enfermedad'),
+                          validator: (v) {
+                            if (_hasDefect == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                            return null;
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                  isMobile,
+                  maxLines: 4,
+                ),
+
+                const SizedBox(height: 12),
+
+                _rowLabelFieldResponsive(
+                  'Carnet',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _hasCarnet == null ? null : (_hasCarnet! ? 'Sí' : 'No'),
+                        decoration: _fieldDecoration('Seleccione'),
+                        items: ['Sí', 'No'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _hasCarnet = (val == 'Sí');
+                            if (_hasCarnet != true) _petCarnetCtrl.clear();
+                          });
+                        },
+                        validator: (v) => (v == null || v.isEmpty) ? 'Selecciona una opción' : null,
+                      ),
+                      if (_hasCarnet == true) ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _petCarnetCtrl,
+                          decoration: _fieldDecoration('Digite el número de carnet'),
+                          validator: (v) {
+                            if (_hasCarnet == true && (v == null || v.isEmpty)) return 'Campo obligatorio';
+                            return null;
+                          },
+                        ),
+                      ] else if (_hasCarnet == false) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: EdgeInsets.only(top: 0),
+                          child: Text(
+                            "Las asistencias no serán entregadas hasta que cuente con carnet actualizado",
+                            style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  isMobile,
+                  maxLines: 4,
+                ),
+
+
+                const SizedBox(height: 12),
+
+                _rowLabelFieldResponsive(
+                  'Foto',
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton.icon(
+                          onPressed: _pickFile,
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('Subir foto'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber[700],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
+                            ),
+                          ),
+
+                        ),
+                      ),
+                      if (_photoFile != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Archivo: ${_photoFile!.path.split('/').last}',
+                          style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                  isMobile,
+                ),
+
+                if (_photoFile != null)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                        top: 8.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Archivo: ${_photoFile!
+                            .path
+                            .split('/')
+                            .last}',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 18),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: _acceptData,
+                      onChanged: (v) {
+                        if (v ?? false) {
+                          _showTermsDialog(context);
+                        } else {
+                          setState(() => _acceptData = false);
+                        }
+                      },
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _acceptData = !_acceptData);
+                          if (_acceptData) {
+                            _showTermsDialog(context);
+                          }
+                        },
+                        child: const Text(
+                          'He leído y comprendido sobre el tratamiento de datos personales.',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+
+                      if (!_acceptData) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes aceptar el uso de datos'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_idCtrl.text.length != 10) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('La cédula debe tener 10 dígitos'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+
+                      if (_phoneCtrl.text.length != 10) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('El celular debe tener 10 dígitos'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_formKey.currentState?.validate() != true) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Completa todos los campos obligatorios'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(_emailCtrl.text)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Ingresa un correo electrónico válido'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      if (_photoFile == null && _photoBytes == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes subir una foto'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+
+                      if (_hasCarnet == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Selecciona si la mascota tiene carnet'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      if (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Debes ingresar el número de carnet'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (_petNameCtrl.text.isEmpty ||
+                          _selectedBreed == null ||
+                          _selectedSpecies == null ||
+                          _selectedGender == null ||
+                          _selectedBirthDate == null ||
+                          _petColorCtrl.text.isEmpty ||
+                          (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||
+                          (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Completa todos los datos de la mascota'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => Center(
+                          child: Lottie.asset(
+                            'lib/ui/animation/Animacion_de_carga.json',
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      );
+
+                      try {
+                        // String? imageBase64;
+
+                        String? imageBase64;
+                        if (_photoBytes != null) {
+                          imageBase64 = base64Encode(_photoBytes!);
+                        } else if (_photoFile != null) {
+                          final bytes = await _photoFile!.readAsBytes();
+                          imageBase64 = base64Encode(bytes);
+                        }
+                        final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
+                            "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
+                            "${_selectedBirthDate!.year}";
+
+                        final mensaje = await _formRepository.enviarDatos(
+                          nombre: _ownerNameCtrl.text,
+                          apellido: _ownerLastNameCtrl.text,
+                          cedula: _idCtrl.text,
+                          celular: _phoneCtrl.text,
+                          email: _emailCtrl.text,
+                          ciudad: _cityCtrl.text,
+                          contractId: widget.idContrato.toString(),
+                          mascotas: [
+                            {
+                              'nombre': _petNameCtrl.text,
+                              'raza': _selectedBreed!,
+                              'species': _selectedSpecies!,
+                              'gender': _selectedGender!,
+                              'color': _petColorCtrl.text,
+                              'birth_date': _selectedBirthDate!.toIso8601String(),
+                              'carnet': _hasCarnet == false
+                                  ? "No tendrá cobertura hasta que tenga carnet"
+                                  : _petCarnetCtrl.text,
+                              'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
+                              'image_base64': imageBase64,
+                            }
+                          ],
+                        );
+                        print("Datos que se enviarán: $mensaje");
+
+
+
+                        Navigator.of(context).pop();
+                        final nombreTemp = _ownerNameCtrl.text;
+                        final mascotaTemp = _petNameCtrl.text;
+                        _limpiarFormularios();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SuccessPage(
+
+                            ),
+                          ),
+                        );
+                        print("Nombre: ${_ownerNameCtrl.text}");
+                        print("Mascota: ${_petNameCtrl.text}");
+
+                        // Limpiar formulario
+
+                        print("Nombre1: ${_ownerNameCtrl.text}");
+                        print("Mascota2: ${_petNameCtrl.text}");
+                      } catch (e) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ErrorPage()),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF074B5E),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Confirmar',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+*/
+
+     // Ajusta el umbral según tu diseño
+    // Para conocer el tamaño de la pantalla
+
+  //   return Scaffold(
+  //     backgroundColor: Colors.grey[200], // Fondo suave
+  //     body: Center(
+  //       child: Container(
+  //         width: size.width * 0.9, // ocupa el 90% del ancho de la pantalla
+  //         height: size.height * 0.85, // ocupa el 85% del alto de la pantalla
+  //         decoration: BoxDecoration(
+  //           color: Colors.white,
+  //           borderRadius: BorderRadius.circular(24),
+  //           boxShadow: [
+  //             BoxShadow(
+  //               color: Colors.black26,
+  //               blurRadius: 16,
+  //               offset: Offset(0, 8),
+  //             ),
+  //           ],
+  //         ),
+  //         child: Row(
+  //           children: [
+  //             // Parte izquierda - Imagen
+  //             Expanded(
+  //               flex: 2,
+  //               child: ClipRRect(
+  //                 borderRadius: const BorderRadius.only(
+  //                   topLeft: Radius.circular(24),
+  //                   bottomLeft: Radius.circular(24),
+  //                 ),
+  //                 child: Image.asset(
+  //                   'lib/ui/img/vistaEscritorio.jpg', // tu imagen local
+  //                   fit: BoxFit.cover,
+  //                   width: double.infinity,
+  //                   height: double.infinity,
+  //                 ),
+  //               ),
+  //             ),
+  //
+  //             // Parte derecha - Formulario con scroll
+  //             Expanded(
+  //           flex: 2,
+  //           child: Container(
+  //             decoration: BoxDecoration(
+  //               color: Colors.white,
+  //               borderRadius: BorderRadius.circular(12),
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: Colors.black.withOpacity(0.05),
+  //                   blurRadius: 8,
+  //                   offset: const Offset(0, 4),
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(16.0),
+  //               child: SingleChildScrollView(
+  //                 child: Form(
+  //                   key: _formKey,
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                         // Header solo en escritorio
+  //                         const SizedBox(height: 16),
+  //                       Padding(
+  //                         padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+  //                         child: Center(
+  //                           child: Text(
+  //                             'Datos Dueño de la Mascota',
+  //                             style: const TextStyle(
+  //                               color: Color(0xFF074B5E), // mismo azul que los labels
+  //                               fontSize: 22,
+  //                               fontWeight: FontWeight.w700,
+  //                             ),
+  //                             textAlign: TextAlign.center,
+  //                           ),
+  //                         ),
+  //                       ),                          // Campos Dueño
+  //                         _rowLabelFieldResponsive(
+  //                           'Nombre dueño de la mascota',
+  //                           TextFormField(
+  //                             controller: _ownerNameCtrl,
+  //                             decoration: _fieldDecoration('Nombre'),
+  //                             validator: (v) {
+  //                               if (v == null || v.isEmpty) return 'Obligatorio';
+  //                               if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+  //                                 return 'Solo letras permitidas';
+  //                               return null;
+  //                             },
+  //                           ),
+  //                           isMobile,
+  //                         ),
+  //                         const SizedBox(height: 12),
+  //                         _rowLabelFieldResponsive(
+  //                           'Apellido del dueño de la mascota',
+  //                           TextFormField(
+  //                             controller: _ownerLastNameCtrl,
+  //                             decoration: _fieldDecoration('Apellido'),
+  //                             validator: (v) {
+  //                               if (v == null || v.isEmpty) return 'Obligatorio';
+  //                               if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+  //                                 return 'Solo letras permitidas';
+  //                               return null;
+  //                             },
+  //                           ),
+  //                           isMobile,
+  //                         ),
+  //                         const SizedBox(height: 12),
+  //                         _rowLabelFieldResponsive(
+  //                           'Cédula del titular',
+  //                           TextFormField(
+  //                             controller: _idCtrl,
+  //                             decoration: _fieldDecoration('Cédula'),
+  //                             keyboardType: TextInputType.number,
+  //                             inputFormatters: [
+  //                               FilteringTextInputFormatter.digitsOnly,
+  //                               LengthLimitingTextInputFormatter(10),
+  //                             ],
+  //                             validator: (v) {
+  //                               if (v == null || v.isEmpty) return 'Campo obligatorio';
+  //                               if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+  //                               if (v.length != 10) return 'Debe tener 10 dígitos';
+  //                               return null;
+  //                             },
+  //                           ),
+  //                           isMobile,
+  //                         ),
+  //                         const SizedBox(height: 12),
+  //                         _rowLabelFieldResponsive(
+  //                           'Celular',
+  //                           TextFormField(
+  //                             controller: _phoneCtrl,
+  //                             decoration: _fieldDecoration('Celular'),
+  //                             keyboardType: TextInputType.phone,
+  //                             inputFormatters: [
+  //                               FilteringTextInputFormatter.digitsOnly,
+  //                               LengthLimitingTextInputFormatter(10),
+  //                             ],
+  //                             validator: (v) {
+  //                               if (v == null || v.isEmpty) return 'Campo obligatorio';
+  //                               if (!RegExp(r'^\d+$').hasMatch(v)) return 'Solo números permitidos';
+  //                               if (v.length != 10) return 'Debe tener 10 dígitos';
+  //                               return null;
+  //                             },
+  //                           ),
+  //                           isMobile,
+  //                         ),
+  //                         const SizedBox(height: 12),
+  //                         _rowLabelFieldResponsive(
+  //                           'E-mail',
+  //                           TextFormField(
+  //                             controller: _emailCtrl,
+  //                             focusNode: _emailFocus,
+  //                             keyboardType: TextInputType.emailAddress,
+  //                             decoration: _fieldDecoration('Correo Electrónico').copyWith(
+  //                               errorText: _emailError,
+  //                             ),
+  //                           ),
+  //                           isMobile,
+  //                         ),
+  //                         const SizedBox(height: 12),
+  //                         _rowLabelFieldResponsive(
+  //                           'Ciudad',
+  //                           TextFormField(
+  //                             controller: _cityCtrl,
+  //                             decoration: _fieldDecoration('Ciudad'),
+  //                             inputFormatters: [
+  //                               FilteringTextInputFormatter.allow(
+  //                                   RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]')),
+  //                             ],
+  //                             validator: (v) {
+  //                               if (v == null || v.isEmpty) return 'Campo obligatorio';
+  //                               if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$').hasMatch(v))
+  //                                 return 'Solo letras permitidas';
+  //                               return null;
+  //                             },
+  //                           ),
+  //                           isMobile,
+  //                         ),
+  //                         const SizedBox(height: 20),
+  //                         // Datos Mascota
+  //                       Padding(
+  //                         padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+  //                         child: Center(
+  //                           child: Text(
+  //                             'Datos de la Mascota',
+  //                             style: const TextStyle(
+  //                               color: Color(0xFF074B5E), // mismo azul que los labels
+  //                               fontSize: 22,
+  //                               fontWeight: FontWeight.w700,
+  //                             ),
+  //                             textAlign: TextAlign.center,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                         const SizedBox(height: 12),
+  //                         if (_mascotas.isNotEmpty)
+  //                           SingleChildScrollView(
+  //                             scrollDirection: Axis.horizontal,
+  //                             child: ConstrainedBox(
+  //                               constraints:
+  //                               BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+  //                               child: SingleChildScrollView(
+  //                                 scrollDirection: Axis.vertical,
+  //                                 child: DataTable(
+  //                                   columns: const [
+  //                                     DataColumn(label: Text('Nombre')),
+  //                                     DataColumn(label: Text('Especie')),
+  //                                     DataColumn(label: Text('Raza')),
+  //                                     DataColumn(label: Text('Color')),
+  //                                     DataColumn(label: Text('Carnet')),
+  //                                     DataColumn(label: Text('Acciones')),
+  //                                   ],
+  //                                   rows: _mascotas.map((m) {
+  //                                     return DataRow(cells: [
+  //                                       DataCell(Text(m['nombre']!)),
+  //                                       DataCell(Text(m['species']!)),
+  //                                       DataCell(Text(m['raza']!)),
+  //                                       DataCell(Text(m['color']!)),
+  //                                       DataCell(Text(m['carnet']!)),
+  //                                       DataCell(
+  //                                         IconButton(
+  //                                           icon: const Icon(Icons.delete, color: Colors.red),
+  //                                           onPressed: () {
+  //                                             setState(() {
+  //                                               _mascotas.remove(m);
+  //                                             });
+  //                                           },
+  //                                         ),
+  //                                       ),
+  //                                     ]);
+  //                                   }).toList(),
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         const SizedBox(height: 12),
+  //
+  //
+  //                       ],
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+/*
+  Widget _rowLabelFieldResponsive(String label, Widget field, bool isMobile, {int maxLines = 1}) {
+    final double labelWidth = isMobile ? 280.0 : 300.0;
+    final cross = maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: cross,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+          // Pill (cuadrada)
+          SizedBox(
+            width: labelWidth,
             child: _labelPill(label),
           ),
-          field,
-        ],
-      );
-    } else {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 200, // Ancho fijo para desktop
-            child: Padding(
-              padding: const EdgeInsets.only(top: 6), // Ajuste fino de alineación
-              child: _labelPill(label),
+
+          // Campo con ancho máximo
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 350), // aquí defines el ancho máximo del campo
+            child: (maxLines > 1)
+                ? Padding(
+              padding: const EdgeInsets.only(left: 0, top: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [field],
+              ),
+            )
+                : SizedBox(
+              height: 46,
+              child: Center(child: field),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8),
+        ],
+      ),
+    );
+  }
+*/
+  Widget _rowLabelFieldResponsive(
+      String label,
+      Widget field,
+      bool isMobile, {
+        int maxLines = 1,
+      }) {
+    final cross = maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center;
+
+    if (isMobile) {
+      // 📱 Diseño vertical para móvil
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _labelPill(label, height: 40), // Label arriba
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity, // que se ajuste al ancho disponible
               child: field,
             ),
-          ),
-        ],
+          ],
+        ),
+      );
+    } else {
+      // 💻 Diseño horizontal para pantallas grandes
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          crossAxisAlignment: cross,
+          children: [
+            // Pill (cuadrada)
+            SizedBox(
+              width: 300,
+              child: _labelPill(label),
+            ),
+            const SizedBox(width: 8),
+            // Campo con ancho máximo
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 350),
+              child: (maxLines > 1)
+                  ? Padding(
+                padding: const EdgeInsets.only(left: 0, top: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [field],
+                ),
+              )
+                  : SizedBox(
+                height: 46,
+                child: Center(child: field),
+              ),
+            ),
+          ],
+        ),
       );
     }
   }
-  Widget _labelPill(String text) {
+
+
+  Widget _labelPill(String text, {bool multiline = false, double height = 46}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A5970), // Azul oscuro directo
-        borderRadius: BorderRadius.circular(16),
-      ),
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.centerLeft,
+      color: const Color(0xFF0A5970), // mismo color que usas
       child: Text(
         text,
+        maxLines: multiline ? 2 : 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: multiline,
         style: const TextStyle(
-          color: Colors.white, // Texto blanco
+          color: Colors.white,
           fontWeight: FontWeight.w600,
           fontSize: 14,
         ),
       ),
     );
   }
-// Si quieres la fuente igual que el PDF, agrega google_fonts a pubspec y descomenta los import/uso.
-// import 'package:google_fonts/google_fonts.dart';
-
+  /*
   void _showTermsDialog(BuildContext context) {
     const Color pageWhite = Colors.white;
     const Color titleBlue = Color(0xFF0B7A95);
@@ -2220,8 +4375,275 @@ class _FormPageState extends State<FormPage> {
       ),
     );
   }
+*/
+  void _showTermsDialog(BuildContext context) {
+    const Color pageWhite = Colors.white;
+    const Color titleBlue = Color(0xFF0B7A95);
+    const Color bodyBlue = Color(0xFF0B5E6C);
 
-// Widget auxiliar para las secciones
+    const double logoWidth = 60; // ajustable
+    const double contentWidthFactor = 0.62;
+
+    final size = MediaQuery.of(context).size;
+    final bool isMobile = size.width < 600;
+
+    // ancho máximo del papel según el dispositivo
+    final double paperMaxWidth = isMobile ? size.width * 0.95 : size.width * 0.92;
+
+    Widget _bullet(String text) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 6, right: 10),
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: titleBlue,
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 15.0,
+                  color: bodyBlue,
+                  height: 1.48,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.justify,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget _numberedSection(int number, String heading, List<String> items) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$number. ',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: titleBlue,
+                    ),
+                  ),
+                  TextSpan(
+                    text: heading,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: titleBlue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (items.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: items.map((it) => _bullet(it)).toList(),
+              ),
+          ],
+        ),
+      );
+    }
+
+    final String intro =
+        'OTTOKARE, conforme a lo dispuesto en la Ley Orgánica de Protección de Datos Personales (LOPDP), informa a los titulares que:';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              // 👇 Responsivo: en móvil usa 90%–95% del ancho, en desktop mínimo 600
+              minWidth: isMobile ? size.width * 0.9 : 600,
+              maxWidth: paperMaxWidth,
+              maxHeight: size.height * 0.92,
+            ),
+            child: Material(
+              color: pageWhite,
+              elevation: 14,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                child: Column(
+                  children: [
+                    // ----- HEADER -----
+                    SizedBox(
+                      height: 64,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'TRATAMIENTO DE DATOS PERSONALES',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w700,
+                                color: titleBlue,
+                                letterSpacing: 0.6,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Image.asset(
+                            'lib/ui/img/Logo1.png',
+                            width: logoWidth,
+                            height: logoWidth,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+                    Divider(color: Colors.grey.shade300, thickness: 1),
+                    const SizedBox(height: 8),
+
+                    // ----- BODY (scrollable) -----
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: FractionallySizedBox(
+                            widthFactor: isMobile ? 0.95 : contentWidthFactor,
+                            alignment: Alignment.topCenter,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'TRATAMIENTO DE DATOS PERSONALES',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: titleBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  intro,
+                                  style: const TextStyle(
+                                    fontSize: 15.0,
+                                    color: bodyBlue,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.justify,
+                                ),
+                                const SizedBox(height: 16),
+
+                                _numberedSection(1, 'Datos personales que se recopilarán', [
+                                  'Datos identificativos: nombres, apellidos, cédula/pasaporte, dirección, teléfono, correo electrónico.',
+                                  'Datos de pago: número de cuenta o tarjeta, historial de pagos.',
+                                  'Datos relacionados con la mascota: nombre, especie, raza, edad, historial médico veterinario, características físicas, fotografías.',
+                                  'Datos sensibles: información sobre la salud de la mascota.',
+                                ]),
+
+                                _numberedSection(2, 'Finalidades del tratamiento', [
+                                  'Gestionar la suscripción y prestación del servicio de asistencia para mascotas.',
+                                  'Coordinar atención veterinaria, transporte o servicios complementarios conforme el certificado de cobertura.',
+                                  'Realizar seguimiento y control de casos de asistencia.',
+                                  'Gestionar pagos, facturación y cobranzas.',
+                                  'Atender consultas, solicitudes o reclamos.',
+                                  'Cumplir con obligaciones legales, contractuales o regulatorias.',
+                                  'Enviar comunicaciones informativas o comerciales relacionadas con el servicio, siempre que el titular no haya ejercido su derecho de oposición.',
+                                ]),
+
+                                _numberedSection(3, 'Base legal del tratamiento', [
+                                  'Que sea realizado por el responsable del tratamiento, por orden judicial u obligación legal.',
+                                  'Para la ejecución de medidas precontractuales a petición del titular o para el cumplimiento de obligaciones contractuales.',
+                                  'Para satisfacer un interés legítimo del responsable de tratamiento.',
+                                ]),
+
+                                _numberedSection(4, 'Comunicación y almacenamiento de datos', [
+                                  'Los datos podrán ser compartidos con proveedores, veterinarios, clínicas, aseguradoras, empresas de transporte o call centers que actúen como encargados del tratamiento, únicamente para el cumplimiento de las finalidades antes descritas.',
+                                  'En caso de transferencias internacionales, se garantizará que el país de destino cuente con niveles adecuados de protección o que existan garantías contractuales suficientes.',
+                                  'El almacenamiento podrá realizarse en servidores propios o en servicios de computación en la nube, con las medidas técnicas y organizativas necesarias para proteger la información.',
+                                ]),
+
+                                _numberedSection(5, 'Plazo de conservación', [
+                                  'OTTOKARE conservará los datos personales por un período de tiempo razonable tras terminar la relación contractual para permitir la defensa en caso de reclamos.',
+                                  'Los datos serán tratados solo en la medida necesaria para los fines, o según lo exija la ley.',
+                                  'OTTOKARE tomará medidas para eliminar, bloquear, seudonimizar o anonimizar los datos cuando no sean necesarios.',
+                                ]),
+
+                                _numberedSection(6, 'Derechos del titular', [
+                                  'Para ejercer derechos sobre los datos, enviar solicitud a: legal@mmhcloseness.com',
+                                  'La solicitud deberá contener al menos: nombres completos, cédula/pasaporte, dirección de notificación y descripción clara de la solicitud.',
+                                ]),
+
+                                _numberedSection(7, 'No entrega de datos personales, o datos erróneos o inexactos', [
+                                  'Los titulares deberán entregar información exacta y completa, caso contrario los servicios no podrán ser prestados de manera adecuada.',
+                                ]),
+
+                                const SizedBox(height: 18),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ----- FOOTER -----
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: titleBlue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          setState(() => _acceptData = true);
+                        },
+                        child: const Text(
+                          'ACEPTAR',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+
   Widget _buildSection({required String title, required String content}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2246,7 +4668,7 @@ class _FormPageState extends State<FormPage> {
         ),
       ],
     );
-  }  
+  }
   Future<void> _enviarDatos() async {
     // Mostrar indicador de carga
     showDialog(
@@ -2298,13 +4720,12 @@ class _FormPageState extends State<FormPage> {
   }
   @override
   void initState() {
-   // final String idContrato = Uri.base.queryParameters['contract'] ?? '';
+    // final String idContrato = Uri.base.queryParameters['contract'] ?? '';
     /*final String idContrato = Uri.base.queryParameters['contract_id'] ?? '';
     super.initState();
     runApp(MaterialApp(
       home: FormPage(idContrato: int.tryParse(idContrato) ?? 0),
     ));*/
-
 
 
     _emailFocus.addListener(() {
@@ -2323,83 +4744,5 @@ class _FormPageState extends State<FormPage> {
     });
   }
 
-
 }
-// const SizedBox(height: 18),
-//
-// // Botón agregar mascota
-//
-// Row(
-//   children: [
-//     Expanded(
-//       child: ElevatedButton.icon(
-//         onPressed: () {
-//           if (_petNameCtrl.text
-//               .isEmpty ||
-//               _selectedBreed == null ||
-//               _selectedBirthDate ==
-//                   null) {
-//
-//             ScaffoldMessenger.of(
-//                 context).showSnackBar(
-//               const SnackBar(
-//                   content: Text(
-//                       'Complete todos los datos del formulario')),
-//             );
-//             return;
-//           }
-//
-//           // Convertimos DateTime a String (dd/MM/yyyy)
-//           final birthDateStr =
-//               "${_selectedBirthDate!.day
-//               .toString().padLeft(
-//               2, '0')}/"
-//               "${_selectedBirthDate!
-//               .month.toString().padLeft(
-//               2, '0')}/"
-//               "${_selectedBirthDate!
-//               .year}";
-//
-//           setState(() {
-//             _mascotas.add({
-//               'nombre': _petNameCtrl.text,
-//               'raza': _selectedBreed ?? '',
-//               'species': _selectedSpecies ?? '',
-//               'gender': _selectedGender ?? '',
-//               'color': _petColorCtrl.text,
-//               'birth_date': _selectedBirthDate!.toIso8601String(),
-//               'carnet': _petCarnetCtrl.text,
-//               'defect': _hasDefect == true
-//                   ? _defectCtrl.text
-//                   : 'La mascota no tiene defectos',                                                    });
-//
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               const SnackBar(
-//                 content: Text('Mascota agregada correctamente'),
-//                 backgroundColor: Colors.green,
-//               ),
-//             );
-//
-//             // Limpiar campos
-//             _petNameCtrl.clear();
-//             _selectedGender = null;
-//             _selectedBreed = null;
-//             _selectedSpecies = null;
-//             _birthDateCtrl.clear();
-//             _selectedBirthDate = null;
-//             _petColorCtrl.clear();
-//             _hasDefect = null;
-//             _petCarnetCtrl.clear();
-//           });
-//         },
-//         icon: const Icon(Icons.add),
-//         label: const Text(
-//             'Agregar Mascota'),
-//         style: ElevatedButton.styleFrom(
-//           backgroundColor: Colors.green,
-//           foregroundColor: Colors.white,
-//         ),
-//       ),
-//     ),
-//   ],
-// ),
+

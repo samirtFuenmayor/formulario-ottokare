@@ -81,6 +81,8 @@ flutter:
     - lib/ui/img/Logo1.png
     - lib/ui/img/Hola.png
     - lib/ui/img/diseño.png
+    - lib/ui/img/vista_movil.png
+    - lib/ui/img/vistaEscritorio.jpg
 
 
   uses-material-design: true
