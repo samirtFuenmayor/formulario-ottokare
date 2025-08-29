@@ -1231,10 +1231,7 @@ class _FormPageState extends State<FormPage> {
               isMobile,
               maxLines: 4,
             ),
-
-
             const SizedBox(height: 12),
-
             _rowLabelFieldResponsive(
               'Foto',
               Column(
@@ -1321,13 +1318,11 @@ class _FormPageState extends State<FormPage> {
             ),
 
             const SizedBox(height: 12),
-
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
-
+                  // Validaciones del formulario completo
                   if (!_acceptData) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -1337,7 +1332,7 @@ class _FormPageState extends State<FormPage> {
                     );
                     return;
                   }
-
+                  // Validar cédula
                   if (_idCtrl.text.length != 10) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -1348,7 +1343,7 @@ class _FormPageState extends State<FormPage> {
                     return;
                   }
 
-
+                  // Validar celular
                   if (_phoneCtrl.text.length != 10) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -1368,7 +1363,7 @@ class _FormPageState extends State<FormPage> {
                     );
                     return;
                   }
-
+                  // Validar correo
                   final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                   if (!emailRegex.hasMatch(_emailCtrl.text)) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -1409,14 +1404,15 @@ class _FormPageState extends State<FormPage> {
                     return;
                   }
 
+                  // Validación adicional de campos de mascota
                   if (_petNameCtrl.text.isEmpty ||
                       _selectedBreed == null ||
                       _selectedSpecies == null ||
                       _selectedGender == null ||
                       _selectedBirthDate == null ||
                       _petColorCtrl.text.isEmpty ||
-                      (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||
-                      (_hasDefect == true && _defectCtrl.text.isEmpty)) {
+                      (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||  // Solo obligatorio si es "Sí"
+                      (_hasDefect == true && _defectCtrl.text.isEmpty)) {     // Solo obligatorio si es "Sí"
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Completa todos los datos de la mascota'),
@@ -1426,6 +1422,7 @@ class _FormPageState extends State<FormPage> {
                     return;
                   }
 
+                  // Mostrar indicador de carga
                   showDialog(
                     context: context,
                     barrierDismissible: false,
@@ -1440,7 +1437,7 @@ class _FormPageState extends State<FormPage> {
                   );
 
                   try {
-
+                    // String? imageBase64;
 
                     String? imageBase64;
                     if (_photoBytes != null) {
@@ -1449,10 +1446,12 @@ class _FormPageState extends State<FormPage> {
                       final bytes = await _photoFile!.readAsBytes();
                       imageBase64 = base64Encode(bytes);
                     }
+                    // Convertimos fecha a String
                     final birthDateStr = "${_selectedBirthDate!.day.toString().padLeft(2, '0')}/"
                         "${_selectedBirthDate!.month.toString().padLeft(2, '0')}/"
                         "${_selectedBirthDate!.year}";
 
+                    // Enviar datos al backend
                     final mensaje = await _formRepository.enviarDatos(
                       nombre: _ownerNameCtrl.text,
                       apellido: _ownerLastNameCtrl.text,
@@ -1460,7 +1459,7 @@ class _FormPageState extends State<FormPage> {
                       celular: _phoneCtrl.text,
                       email: _emailCtrl.text,
                       ciudad: _cityCtrl.text,
-                      contractId: widget.idContrato.toString(),
+                      contractId: widget.idContrato.toString(), // <-- se agrega aquí
                       mascotas: [
                         {
                           'nombre': _petNameCtrl.text,
@@ -1471,7 +1470,7 @@ class _FormPageState extends State<FormPage> {
                           'birth_date': _selectedBirthDate!.toIso8601String(),
                           'carnet': _hasCarnet == false
                               ? "No tendrá cobertura hasta que tenga carnet"
-                              : _petCarnetCtrl.text,
+                              : _petCarnetCtrl.text,  // Solo si es "Sí"
                           'defect': _hasDefect == true ? _defectCtrl.text : 'La mascota no tiene defectos',
                           'image_base64': imageBase64,
                         }
@@ -1479,12 +1478,11 @@ class _FormPageState extends State<FormPage> {
                     );
                     print("Datos que se enviarán: $mensaje");
 
-
-
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(); // cerrar loader
                     final nombreTemp = _ownerNameCtrl.text;
                     final mascotaTemp = _petNameCtrl.text;
                     _limpiarFormularios();
+                    // Ir a página de éxito
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
