@@ -4,7 +4,7 @@ import 'dart:convert';
 class FormRepository {
   final String baseUrl = "https://ottocare-api-g6bbdbezgngpcycm.chilecentral-01.azurewebsites.net/";
 
-  Future<String> enviarDatos({
+  Future<Map<String, dynamic>> enviarDatos({
     required String nombre,
     required String apellido,
     required String cedula,
@@ -58,7 +58,7 @@ class FormRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        return data["mensaje"] ?? "Datos enviados correctamente";
+        return data;
       } else {
         throw Exception("Error: ${response.statusCode} - ${response.body}");
       }
@@ -66,5 +66,7 @@ class FormRepository {
       throw Exception("Error al enviar datos: $e");
     }
   }
-}
+  }
+
+
 

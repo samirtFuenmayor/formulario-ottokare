@@ -13,6 +13,8 @@ import 'package:flutter/services.dart'; // Para FilteringTextInputFormatter
 import 'Succes_page.dart';
 import 'package:lottie/lottie.dart';
 import 'Error_page.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 class FormPage extends StatefulWidget {
   final int idContrato;
   const FormPage({super.key, required this.idContrato});
@@ -444,6 +446,14 @@ class _FormPageState extends State<FormPage> {
     }
   }
 
+  //fubncion par dirigir url
+  Future<void> _abrirYoutube() async {
+    final Uri url = Uri.parse("https://www.youtube.com/watch?v=dQw4w9WgXcQ"); // 👈 tu URL aquí
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('No se pudo abrir $url');
+    }
+  }
+
   String _calculateAge(DateTime birthDate) {
     DateTime today = DateTime.now();
 
@@ -604,12 +614,9 @@ class _FormPageState extends State<FormPage> {
                       imageBase64 = base64Encode(bytes);
                     }
 
-                    // Convertir bytes a Base64
-                    //final imageBase64 = base64Encode(_photoBytes!);
-
                     try {
                       // Enviar datos al backend
-                      final mensaje = await _formRepository.enviarDatos(
+                      final data = await _formRepository.enviarDatos(
                         nombre: _ownerNameCtrl.text,
                         apellido: _ownerLastNameCtrl.text,
                         cedula: _idCtrl.text,
@@ -620,38 +627,34 @@ class _FormPageState extends State<FormPage> {
                         mascotas: _mascotas,
                       );
 
-                      // Cerrar indicador de carga
-                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(); // cerrar loader
 
-                      // Mostrar mensaje de éxito
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   SnackBar(
-                      //     content: Text(mensaje),
-                      //     backgroundColor: Colors.green,
-                      //     duration: const Duration(seconds: 3),
-                      //   ),
-                      // );
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              SuccessPage(
+                      if (data["status"] == "success") {
+                        final bool esAfiliado = data["data"]["statusTitular"] == true;
 
-                              ),
-                        ),
-                      );
+                        if (esAfiliado) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => SuccessPage()),
+                          );
+                        } else {
+                          mostrarErrorPopup(context);
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(data["message"] ?? "Error en la validación"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                       // Limpiar formulario
                       _limpiarFormularios();
                     } catch (e) {
                       // Cerrar indicador de carga en caso de error
-                      Navigator.of(context).pop();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error al enviar: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                          duration: const Duration(seconds: 3),
-                        ),
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ErrorPage()),
                       );
                     }
                   },
@@ -1452,14 +1455,14 @@ class _FormPageState extends State<FormPage> {
                         "${_selectedBirthDate!.year}";
 
                     // Enviar datos al backend
-                    final mensaje = await _formRepository.enviarDatos(
+                    final data  = await _formRepository.enviarDatos(
                       nombre: _ownerNameCtrl.text,
                       apellido: _ownerLastNameCtrl.text,
                       cedula: _idCtrl.text,
                       celular: _phoneCtrl.text,
                       email: _emailCtrl.text,
                       ciudad: _cityCtrl.text,
-                      contractId: widget.idContrato.toString(), // <-- se agrega aquí
+                      contractId: widget.idContrato.toString(),
                       mascotas: [
                         {
                           'nombre': _petNameCtrl.text,
@@ -1476,33 +1479,43 @@ class _FormPageState extends State<FormPage> {
                         }
                       ],
                     );
-                    print("Datos que se enviarán: $mensaje");
+                    print("Datos que se enviarán: $data");
 
                     Navigator.of(context).pop(); // cerrar loader
                     final nombreTemp = _ownerNameCtrl.text;
                     final mascotaTemp = _petNameCtrl.text;
-                    _limpiarFormularios();
-                    // Ir a página de éxito
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SuccessPage(
 
+                    _limpiarFormularios();
+                    //se aplica la validacion
+                    if(data["status"] == "success"){
+                      final bool esTitular = data["data"]["statusTitular"] == true;
+
+                      if(esTitular){
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SuccessPage(
+
+                            ),
+                          ),
+                        );
+                      }else {
+                        mostrarErrorPopup(context);
+
+                      }
+                    }else{
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Error en la validación"),
+                          backgroundColor: Colors.red,
                         ),
-                      ),
-                    );
+                      );
+                    }
+                  } catch (e) {
                     print("Nombre: ${_ownerNameCtrl.text}");
                     print("Mascota: ${_petNameCtrl.text}");
-
-                    // Limpiar formulario
-
                     print("Nombre1: ${_ownerNameCtrl.text}");
                     print("Mascota2: ${_petNameCtrl.text}");
-                  } catch (e) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ErrorPage()),
-                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -1925,6 +1938,63 @@ class _FormPageState extends State<FormPage> {
       ],
     );
   }
+
+  void mostrarErrorPopup(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // no se cierra al tocar fuera
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animación Lottie
+                SizedBox(
+                  height: 120,
+                  child: Lottie.asset(
+                    "lib/ui/animation/ErrorForm.json",
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Mensaje
+                const Text(
+                  "No es posible realizar el registro.\n\nPor favor comunícate con nuestro call center o acércate a nuestras instalaciones.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.black87),
+                ),
+                const SizedBox(height: 20),
+
+                // Botón de aceptar
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, // color del botón
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.of(context).pop(); // cerrar popup
+                    await _abrirYoutube(); // abrir enlace
+                  },
+                  child: const Text("Aceptar"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /*
   Future<void> _enviarDatos() async {
     // Mostrar indicador de carga
     showDialog(
@@ -1974,7 +2044,9 @@ class _FormPageState extends State<FormPage> {
       );
     }
   }
+  */
   @override
+
   void initState() {
     // final String idContrato = Uri.base.queryParameters['contract'] ?? '';
     /*final String idContrato = Uri.base.queryParameters['contract_id'] ?? '';
