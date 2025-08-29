@@ -447,8 +447,8 @@ class _FormPageState extends State<FormPage> {
   }
 
   //fubncion par dirigir url
-  Future<void> _abrirYoutube() async {
-    final Uri url = Uri.parse("https://www.youtube.com/watch?v=dQw4w9WgXcQ"); // 👈 tu URL aquí
+  Future<void> _abrirEnlace() async {
+    final Uri url = Uri.parse("https://www.ecuasanitas.com/");
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('No se pudo abrir $url');
     }
@@ -1942,7 +1942,7 @@ class _FormPageState extends State<FormPage> {
   void mostrarErrorPopup(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, // no se cierra al tocar fuera
+      barrierDismissible: false,
       builder: (context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -1981,11 +1981,18 @@ class _FormPageState extends State<FormPage> {
                     ),
                   ),
                   onPressed: () async {
-                    Navigator.of(context).pop(); // cerrar popup
-                    await _abrirYoutube(); // abrir enlace
+                    Navigator.of(context).pop();
+                    await _abrirEnlace();
                   },
-                  child: const Text("Aceptar"),
-                ),
+                  child: const Text(
+                    "Aceptar",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                )
               ],
             ),
           ),
