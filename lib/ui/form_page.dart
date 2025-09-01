@@ -1414,8 +1414,8 @@ class _FormPageState extends State<FormPage> {
                       _selectedGender == null ||
                       _selectedBirthDate == null ||
                       _petColorCtrl.text.isEmpty ||
-                      (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||  // Solo obligatorio si es "Sí"
-                      (_hasDefect == true && _defectCtrl.text.isEmpty)) {     // Solo obligatorio si es "Sí"
+                      (_hasCarnet == true && _petCarnetCtrl.text.isEmpty) ||
+                      (_hasDefect == true && _defectCtrl.text.isEmpty)) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Completa todos los datos de la mascota'),
@@ -1966,7 +1966,7 @@ class _FormPageState extends State<FormPage> {
 
                 // Mensaje
                 const Text(
-                  "No es posible realizar el registro.\n\nPor favor comunícate con nuestro call center o acércate a nuestras instalaciones.",
+                  "El NUI proporcionado,\nno corresponde al titular del contrato, no se puede crear la cobertura.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.black87),
                 ),
@@ -2001,57 +2001,7 @@ class _FormPageState extends State<FormPage> {
     );
   }
 
-  /*
-  Future<void> _enviarDatos() async {
-    // Mostrar indicador de carga
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
 
-    try {
-      final mensaje = await _formRepository.enviarDatos(
-        nombre: _ownerNameCtrl.text,
-        apellido: _ownerLastNameCtrl.text, // Asegurando que se envía el apellido
-        cedula: _idCtrl.text,
-        celular: _phoneCtrl.text,
-        email: _emailCtrl.text,
-        ciudad: _cityCtrl.text,
-        contractId: widget.idContrato.toString(),
-        mascotas: _mascotas,
-      );
-
-      // Cerrar indicador de carga
-      Navigator.of(context).pop();
-
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(mensaje),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-
-      // Limpiar formulario
-      _limpiarFormularios();
-
-    } catch (e) {
-      // Cerrar indicador de carga en caso de error
-      Navigator.of(context).pop();
-
-      // Mostrar mensaje de error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al enviar los datos: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-  */
   @override
 
   void initState() {
