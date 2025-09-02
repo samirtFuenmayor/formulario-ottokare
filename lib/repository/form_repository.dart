@@ -4,7 +4,7 @@ import 'dart:convert';
 
 
 class FormRepository {
-  final String baseUrl = "https://ottocare-api-container-abhtfcg3akhmhrbx.chilecentral-01.azurewebsites.net/";
+  final String baseUrl = "https://ottocare-api-container-abhtfcg3akhmhrbx.chilecentral-01.azurewebsites.net";
 
   Future<Map<String, dynamic>> enviarDatos({
     required String nombre,
@@ -52,6 +52,7 @@ class FormRepository {
     };
 
     try {
+      print("Datos que se enviarán: inicioPST");
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -60,6 +61,7 @@ class FormRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
+        print("Datos que se enviarán: final post");
         return data;
       } else {
         throw Exception("Error: ${response.statusCode} - ${response.body}");

@@ -1457,6 +1457,7 @@ class _FormPageState extends State<FormPage> {
                         "${_selectedBirthDate!.year}";
 
                     // Enviar datos al backend
+                    print("Datos que se enviarán: inicio post");
                     final data  = await _formRepository.enviarDatos(
                       nombre: _ownerNameCtrl.text,
                       apellido: _ownerLastNameCtrl.text,
