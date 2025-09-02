@@ -637,7 +637,7 @@ class _FormPageState extends State<FormPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => SuccessPage(
-                                emailBase64: data["data"]["email_base64"] ?? "",
+                                imageBase64: data["data"]["email_base64"] ?? "",
                               ),
                             ),
                           );
@@ -1491,13 +1491,14 @@ class _FormPageState extends State<FormPage> {
                     _limpiarFormularios();
                     //se aplica la validacion
                     if(data["status"] == "success"){
-                      final bool esTitular = data["data"]["statusTitular"] == true;
+                      //final bool esTitular = data["data"]["statusTitular"] == true;
+                      final bool esTitular = true;
                       if(esTitular){
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder: (_) => SuccessPage(
-                              emailBase64: data["data"]["email_base64"] ?? "",
+                              imageBase64: data["data"]["email_base64"] ?? "",
                             ),
                           ),
                         );

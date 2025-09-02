@@ -1,14 +1,26 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 class SuccessPage extends StatelessWidget {
-  final String emailBase64;
+  final String imageBase64;
 
-  const SuccessPage({super.key, required this.emailBase64});
+  const SuccessPage({super.key, required this.imageBase64});
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
+    // Convertir Base64 a bytes de forma segura
+    Uint8List? imageBytes;
+    if (imageBase64.isNotEmpty) {
+      try {
+        imageBytes = base64Decode(imageBase64);
+      } catch (e) {
+        imageBytes = null;
+      }
+    }
 
     return Scaffold(
       body: Stack(
@@ -39,66 +51,23 @@ class SuccessPage extends StatelessWidget {
             ),
           ),
 
-          // Contenido central con email en Base64
+          // Imagen central adaptativa
           Center(
-            child: Container(
-              width: size.width * 0.9,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "¡Datos guardados exitosamente!",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Mostrar el email Base64
-                  SelectableText(
-                    emailBase64,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.black54,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Volver al formulario o pantalla anterior
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2575FC),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 24),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Registrar nuevas mascotas",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+            child: imageBytes != null
+                ? Image.memory(
+              imageBytes,
+              width: size.width * 0.9,  // 90% del ancho de pantalla
+              height: size.height * 0.9, // 90% del alto de pantalla
+              fit: BoxFit.contain,       // mantiene proporción
+            )
+                : const Text(
+              "Imagen inválida",
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.red,
               ),
             ),
-          ),
+          )
         ],
       ),
     );
