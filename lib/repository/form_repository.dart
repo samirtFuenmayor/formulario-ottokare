@@ -1,8 +1,10 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+
+
 class FormRepository {
-  final String baseUrl = "https://ottocare-api-g6bbdbezgngpcycm.chilecentral-01.azurewebsites.net/";
+  final String baseUrl = "https://ottocare-api-container-abhtfcg3akhmhrbx.chilecentral-01.azurewebsites.net/";
 
   Future<Map<String, dynamic>> enviarDatos({
     required String nombre,

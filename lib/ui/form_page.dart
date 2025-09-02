@@ -635,11 +635,14 @@ class _FormPageState extends State<FormPage> {
                         if (esAfiliado) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (_) => SuccessPage()),
+                            MaterialPageRoute(
+                              builder: (_) => SuccessPage(
+                                emailBase64: data["data"]["email_base64"] ?? "",
+                              ),
+                            ),
                           );
                         } else {
-                          mostrarErrorPopup(context);
-                        }
+                          mostrarErrorPopup(context, data["data"]["message_coberage"] ?? "Error desconocido");                        }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -1441,7 +1444,6 @@ class _FormPageState extends State<FormPage> {
 
                   try {
                     // String? imageBase64;
-
                     String? imageBase64;
                     if (_photoBytes != null) {
                       imageBase64 = base64Encode(_photoBytes!);
@@ -1489,19 +1491,17 @@ class _FormPageState extends State<FormPage> {
                     //se aplica la validacion
                     if(data["status"] == "success"){
                       final bool esTitular = data["data"]["statusTitular"] == true;
-
                       if(esTitular){
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder: (_) => SuccessPage(
-
+                              emailBase64: data["data"]["email_base64"] ?? "",
                             ),
                           ),
                         );
                       }else {
-                        mostrarErrorPopup(context);
-
+                        mostrarErrorPopup(context, data["data"]["message_coberage"] ?? "Error desconocido");
                       }
                     }else{
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1939,7 +1939,7 @@ class _FormPageState extends State<FormPage> {
     );
   }
 
-  void mostrarErrorPopup(BuildContext context) {
+  void mostrarErrorPopup(BuildContext context, String messageCoverage) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1964,18 +1964,18 @@ class _FormPageState extends State<FormPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Mensaje
-                const Text(
-                  "El NUI proporcionado,\nno corresponde al titular del contrato, no se puede crear la cobertura.",
+                // Mensaje dinámico
+                Text(
+                  messageCoverage,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.black87),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
                 ),
                 const SizedBox(height: 20),
 
                 // Botón de aceptar
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // color del botón
+                    backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
