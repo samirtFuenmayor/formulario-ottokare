@@ -1491,8 +1491,8 @@ class _FormPageState extends State<FormPage> {
                     _limpiarFormularios();
                     //se aplica la validacion
                     if(data["status"] == "success"){
-                      //final bool esTitular = data["data"]["statusTitular"] == true;
-                      final bool esTitular = true;
+                      final bool esTitular = data["data"]["statusTitular"] == true;
+                     // final bool esTitular = true;
                       if(esTitular){
                         Navigator.pushReplacement(
                           context,
@@ -1506,11 +1506,8 @@ class _FormPageState extends State<FormPage> {
                         mostrarErrorPopup(context, data["data"]["message_coberage"] ?? "Error desconocido");
                       }
                     }else{
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Error en la validación"),
-                          backgroundColor: Colors.red,
-                        ),
+                      MaterialPageRoute(
+                        builder: (_) => ErrorPage()
                       );
                     }
                   } catch (e) {
