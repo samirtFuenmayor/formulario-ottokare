@@ -54,11 +54,13 @@ class SuccessPage extends StatelessWidget {
           // Imagen central adaptativa
           Center(
             child: imageBytes != null
-                ? Image.memory(
-              imageBytes,
-              width: size.width * 0.9,  // 90% del ancho de pantalla
-              height: size.height * 0.9, // 90% del alto de pantalla
-              fit: BoxFit.contain,       // mantiene proporción
+                ? ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                widthFactor: 0.91,  // recorta un 20% a lo ancho (10% a cada lado)
+                heightFactor: 0.93, // recorta un 15% en altura (abajo)
+                child: Image.memory(imageBytes),
+              ),
             )
                 : const Text(
               "Imagen inválida",
@@ -67,7 +69,7 @@ class SuccessPage extends StatelessWidget {
                 color: Colors.red,
               ),
             ),
-          )
+          ),
         ],
       ),
     );

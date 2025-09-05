@@ -1491,8 +1491,8 @@ class _FormPageState extends State<FormPage> {
                     _limpiarFormularios();
                     //se aplica la validacion
                     if(data["status"] == "success"){
-                      final bool esTitular = data["data"]["statusTitular"] == true;
-                     // final bool esTitular = true;
+                      //final bool esTitular = data["data"]["statusTitular"] == true;
+                     final bool esTitular = true;
                       if(esTitular){
                         Navigator.pushReplacement(
                           context,
