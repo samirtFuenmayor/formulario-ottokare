@@ -1123,15 +1123,32 @@ class _FormPageState extends State<FormPage> {
                       );
 
                       if (pickedDate != null) {
+                        final today = DateTime.now();
+                        final ageInMonths = (today.year - pickedDate.year) * 12 + (today.month - pickedDate.month);
+
+                        // Validación: mínimo 6 meses (0.5 años) y máximo 10 años (120 meses)
+                        if (ageInMonths < 6 || ageInMonths > 120) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Queremos cuidar a tu mascota en el momento adecuado de su vida. '
+                                    'Solo podemos registrar mascotas entre 6 meses y 10 años cumplidos.',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
                         setState(() {
                           _selectedBirthDate = pickedDate;
                           _birthDateCtrl.text = "${pickedDate.day.toString().padLeft(2, '0')}/"
                               "${pickedDate.month.toString().padLeft(2, '0')}/"
                               "${pickedDate.year} | ${_calculateAge(pickedDate)}";
-
                         });
                       }
                     },
+
                     validator: (v) => (v == null || v.isEmpty) ? 'Campo obligatorio' : null,
                   );
                 },
@@ -1338,6 +1355,24 @@ class _FormPageState extends State<FormPage> {
                     );
                     return;
                   }
+                  if (_selectedBirthDate != null) {
+                    final today = DateTime.now();
+                    final ageInMonths = (today.year - _selectedBirthDate!.year) * 12 + (today.month - _selectedBirthDate!.month);
+
+                    if (ageInMonths < 6 || ageInMonths > 120) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Queremos cuidar a tu mascota en el momento adecuado de su vida. '
+                                'Solo podemos registrar mascotas entre 6 meses y 10 años cumplidos.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                  }
+
                   // Validar cédula
                   if (_idCtrl.text.length != 10) {
                     ScaffoldMessenger.of(context).showSnackBar(
