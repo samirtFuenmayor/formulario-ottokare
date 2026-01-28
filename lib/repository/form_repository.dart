@@ -14,9 +14,10 @@ class FormRepository {
     required String email,
     required String ciudad,
     required String contractId,
+    required String code,
     required List<Map<String, dynamic>> mascotas,
   }) async {
-    final url = Uri.parse("$baseUrl/clients/");
+    final url = Uri.parse("$baseUrl/clients/code");
 
     // Construir JSON dinámico
     final jsonData = {
