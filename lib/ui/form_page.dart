@@ -1519,7 +1519,7 @@ class _FormPageState extends State<FormPage> {
                       ],
                     );
 
-                    Navigator.of(context).pop(); 
+                    Navigator.of(context).pop();
                     final nombreTemp = _ownerNameCtrl.text;
                     final mascotaTemp = _petNameCtrl.text;
 
