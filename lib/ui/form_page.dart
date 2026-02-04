@@ -18,9 +18,8 @@ import 'package:url_launcher/url_launcher.dart';
 class FormPage extends StatefulWidget {
   final int idContrato;
   //NUEVO PARAMETRO
-  final String? code;
 
-  const FormPage({super.key, required this.idContrato, this.code});
+  const FormPage({super.key, required this.idContrato});
 
   @override
   State<FormPage> createState() => _FormPageState();
@@ -628,7 +627,6 @@ class _FormPageState extends State<FormPage> {
                         email: _emailCtrl.text,
                         ciudad: _cityCtrl.text,
                         contractId: widget.idContrato.toString(),
-                        code: widget.code.toString(),
                         mascotas: _mascotas,
                       );
 
@@ -1506,7 +1504,6 @@ class _FormPageState extends State<FormPage> {
                       email: _emailCtrl.text,
                       ciudad: _cityCtrl.text,
                       contractId: widget.idContrato.toString(),
-                      code: widget.code.toString(),
                       mascotas: [
                         {
                           'nombre': _petNameCtrl.text,
