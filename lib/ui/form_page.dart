@@ -384,7 +384,6 @@ class _FormPageState extends State<FormPage> {
         "postal_code": "1122", // si quieres dinámico, reemplazar
       },
       "contract_id": widget.idContrato.toString(),
-      "code": widget.code.toString(),
       "pets": _mascotas.map((pet) {
         return {
           "first_name": pet['nombre'],
@@ -1495,7 +1494,6 @@ class _FormPageState extends State<FormPage> {
                         "${_selectedBirthDate!.year}";
 
                     // Enviar datos al backend
-                    print("Datos que se enviarán: inicio post");
                     final data  = await _formRepository.enviarDatos(
                       nombre: _ownerNameCtrl.text,
                       apellido: _ownerLastNameCtrl.text,
@@ -1520,9 +1518,8 @@ class _FormPageState extends State<FormPage> {
                         }
                       ],
                     );
-                    print("Datos que se enviarán: $data");
 
-                    Navigator.of(context).pop(); // cerrar loader
+                    Navigator.of(context).pop(); 
                     final nombreTemp = _ownerNameCtrl.text;
                     final mascotaTemp = _petNameCtrl.text;
 
