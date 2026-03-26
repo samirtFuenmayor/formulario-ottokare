@@ -68,24 +68,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
-    - lib/ui/img/Clinica-Veterinaria.png
-    - lib/ui/img/Perro.svg
-    - lib/ui/img/Perro.png
-    - lib/ui/img/Logo.png
-    - lib/ui/img/Gato.png
-    - lib/ui/animation/dog.json
-    - lib/ui/animation/cat.json
-    - lib/ui/animation/Confetti.json
-    - lib/ui/animation/Animacion_de_carga.json
-    - lib/ui/animation/error.json
-    - lib/ui/animation/error_dog.json
-    - lib/ui/img/Logo1.png
-    - lib/ui/img/Hola.png
-    - lib/ui/img/diseño.png
-    - lib/ui/img/vista_movil.png
-    - lib/ui/img/vistaEscritorio.jpg
-    - lib/ui/animation/ErrorForm.json
-
+    - lib/ui/img/
 
   uses-material-design: true
   generate: true
