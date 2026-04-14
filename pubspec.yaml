@@ -40,9 +40,10 @@ dependencies:
   flutter_svg: ^2.0.0+1
   confetti: ^0.7.0
   lottie: ^3.1.2
-  google_fonts: ^4.0.4 # Añade esta línea
+  google_fonts: ^6.2.1 # Añade esta línea
   auto_size_text: ^3.0.0
   url_launcher: ^6.3.0
+  syncfusion_flutter_pdfviewer: ^33.1.45
   #http: ^1.1.0
   flutter_localizations:
       sdk: flutter
@@ -69,7 +70,7 @@ dev_dependencies:
 flutter:
   assets:
     - lib/ui/img/
-
+    - asset/pdf/
   uses-material-design: true
   generate: true
 

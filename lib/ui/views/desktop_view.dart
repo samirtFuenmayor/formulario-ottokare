@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'form_widget.dart'; // ajusta la ruta según tu estructura
+import 'form_widget.dart'; // ajusta la ruta según tu estructura}
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DesktopView extends StatelessWidget {
-  const DesktopView({super.key});
+  final String contractId;
+  const DesktopView({super.key, required this.contractId});
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +39,11 @@ class DesktopView extends StatelessWidget {
                     SizedBox(height: H * 0.04),
                     Text(
                       "Activa la asistencia veterinaria para tu compañero",
-                      style: TextStyle(
-                        color: Colors.white, fontSize: titleSize,
-                        fontWeight: FontWeight.bold, height: 1.2,
+                      style: GoogleFonts.quicksand(
+                        color: Colors.white,
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
                       ),
                     ),
                     SizedBox(height: H * 0.02),
@@ -46,13 +51,13 @@ class DesktopView extends StatelessWidget {
                       "Registra a tu mascota y accede a múltiples beneficios.",
                       style: TextStyle(color: Colors.white70, fontSize: subtitleSize),
                     ),
-                    SizedBox(height: H * 0.03),
+                    SizedBox(height: H * 0.04),
                     Wrap(
                       spacing: W * 0.012, runSpacing: 8,
                       children: [
-                        _chip("Asistencia", chipSize),
-                        _chip("Hospedaje",  chipSize),
-                        _chip("Y mucho más", chipSize),
+                        _chip("Asistencia", chipSize, 'lib/ui/img/icon-orientacion-white.svg'),
+                        _chip("Hospedaje", chipSize, 'lib/ui/img/icon-hospedaje-white.svg'),
+                        _chip("Y mucho más", chipSize, 'lib/ui/img/icon-Mas-beneficios-white.svg'),
                       ],
                     ),
                     Expanded(
@@ -83,7 +88,7 @@ class DesktopView extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const FormWidget(),
+                    child: FormWidget(contractId: contractId)
                 ),
               ),
             ],
@@ -93,14 +98,35 @@ class DesktopView extends StatelessWidget {
     );
   }
 
-  Widget _chip(String text, double fontSize) {
+  Widget _chip(String text, double fontSize, String iconPath) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white54),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(text, style: TextStyle(color: Colors.white, fontSize: fontSize)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SvgPicture.asset(
+            iconPath,
+            width: fontSize + 6,
+            height: fontSize + 6,
+            colorFilter: const ColorFilter.mode(
+              Colors.white,
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: fontSize,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
