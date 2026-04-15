@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter
+      - export PATH="$PATH:/tmp/flutter/bin"
+      - flutter precache
+      - flutter --version
+
+  pre_build:
+    commands:
+      - export PATH="$PATH:/tmp/flutter/bin"
+      - flutter pub get
+
+  build:
+    commands:
+      - export PATH="$PATH:/tmp/flutter/bin"
+      - flutter build web --release
+
+  post_build:
+    commands:
+      - aws s3 sync build/web/ s3://formulario-ottokare/ --delete
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: build/web
