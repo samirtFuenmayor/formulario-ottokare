@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,7 +13,8 @@ import '../../bloc/form_event.dart';
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/razas_data.dart';
-
+import 'package:web/web.dart' as web;
+import 'dart:ui_web' as ui_web;
 
 // ═══════════════════════════════════════════════════════════════════
 //  COLORES DEL DESIGN SYSTEM
@@ -115,6 +118,7 @@ class FormWidget extends StatefulWidget {
   State<FormWidget> createState() => _FormWidgetState();
 }
 
+
 class _FormWidgetState extends State<FormWidget> {
   int _step = 0; // 0=datos dueño, 1=mascota, 2=condición, 3=éxito
 
@@ -132,9 +136,11 @@ class _FormWidgetState extends State<FormWidget> {
   final _colorCtrl     = TextEditingController();
   String? _fechaNac;
   DateTime? _selectedDate;
+  String? _fechaError;
   String? _sexo;
   String? _especie;
   String? _raza;
+
 
   // ── Datos paso 3 ──────────────────────────────────────────────
   String? _limitacion;
@@ -142,6 +148,9 @@ class _FormWidgetState extends State<FormWidget> {
   final _limitacionCtrl = TextEditingController();
   final _vacunacionCtrl = TextEditingController();
   bool    _acepta = false;
+  Uint8List? _carnetBytes;
+  String? _carnetName;
+  bool _hasCarnet = false;
 
   // ── Form keys ─────────────────────────────────────────────────
   final _key1 = GlobalKey<FormState>();
@@ -175,6 +184,22 @@ class _FormWidgetState extends State<FormWidget> {
   Timer? _resetTimer;
   int _countdown = 10;
 
+  @override
+  void initState() {
+    super.initState();
+    ui_web.platformViewRegistry.registerViewFactory(
+      'pdf-iframe',
+          (int viewId) {
+        final iframe = web.HTMLIFrameElement()
+          ..src = 'assets/asset/pdf/politica_datos.pdf'
+          ..style.border = 'none'
+          ..style.width = '100%'
+          ..style.height = '100%';
+        return iframe;
+      },
+    );
+  }
+
   void _startResetTimer() {
     _resetTimer?.cancel();
     _countdown = 10;
@@ -197,6 +222,7 @@ class _FormWidgetState extends State<FormWidget> {
       _sexo = null; _especie = null; _raza = null;
       _limitacion = null; _vacunacion = null; _acepta = false;
       _imageBytes = null; _imageName = null; _hasImage = false;
+      _carnetBytes = null; _carnetName = null; _hasCarnet = false;
       _countdown = 10;
     });
     _goToStep(0);
@@ -230,27 +256,30 @@ class _FormWidgetState extends State<FormWidget> {
       locale: const Locale('es', 'ES'),
     );
     if (picked != null) {
-      // ── Validación de rango de edad ──────────────────────────
-      // Mínimo: la mascota debe tener AL MENOS 6 meses
-      // → su fecha de nacimiento debe ser ANTERIOR a (hoy - 6 meses)
       final DateTime fechaMinima = DateTime(now.year, now.month - 6, now.day);
-
-      // Máximo: la mascota debe tener MENOS DE 9 años y 29 días
-      // → su fecha de nacimiento debe ser POSTERIOR a (hoy - 9 años - 29 días)
       final DateTime fechaMaxima = DateTime(now.year - 9, now.month, now.day - 29);
 
       if (picked.isAfter(fechaMinima)) {
-        _showSnack("Tu mascota debe tener al menos 6 meses de edad");
+        setState(() {
+          _selectedDate = picked;
+          _fechaNac = _formatDateWithAge(picked);
+          _fechaError = "La edad de tu mascota esta fuera del rango de cobertura";
+        });
         return;
       }
       if (picked.isBefore(fechaMaxima)) {
-        _showSnack("Tu mascota debe tener menos de 9 años y 29 días de edad");
+        setState(() {
+          _selectedDate = picked;
+          _fechaNac = _formatDateWithAge(picked);
+          _fechaError = "La edad de tu mascota esta fuera del rango de cobertura";
+        });
         return;
       }
 
       setState(() {
         _selectedDate = picked;
         _fechaNac = _formatDateWithAge(picked);
+        _fechaError = null;
       });
     }
   }
@@ -279,16 +308,15 @@ class _FormWidgetState extends State<FormWidget> {
             height: MediaQuery.of(context).size.height * 0.8,
             child: Column(
               children: [
+                // ── Header ──
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   color: kAzulPrincipal,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Política de Datos",
-                        style: kStyleTextosBotones.copyWith(color: kBlanco),
-                      ),
+                      Text("Política de Datos",
+                          style: kStyleTextosBotones.copyWith(color: kBlanco)),
                       IconButton(
                         icon: const Icon(Icons.close, color: kBlanco),
                         onPressed: () => Navigator.pop(context),
@@ -296,12 +324,9 @@ class _FormWidgetState extends State<FormWidget> {
                     ],
                   ),
                 ),
+                // ── PDF via iframe ──
                 Expanded(
-                  child: SfPdfViewer.asset(
-                    'https://www.ecuasanitas.com/assets/files/POLITICA_DE_PROTECCION_DE_DATOS.pdf',
-                    canShowScrollHead: true,
-                    canShowScrollStatus: true,
-                  ),
+                  child: HtmlElementView(viewType: 'pdf-iframe'),
                 ),
               ],
             ),
@@ -466,7 +491,7 @@ class _FormWidgetState extends State<FormWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _btnSecondary("Volver", () => _goToStep(0)),
-              _btnPrimary("Continuar", () {
+              _btnPrimary("Continuar",_fechaError == null? () {
                 if (_key2.currentState!.validate() &&
                     _sexo != null && _especie != null &&
                     _fechaNac != null && _raza != null) {
@@ -476,7 +501,9 @@ class _FormWidgetState extends State<FormWidget> {
                 } else {
                   _showSnack("Completa todos los campos");
                 }
-              }),
+              }
+              :null,
+              ),
             ],
           ),
         ],
@@ -585,6 +612,13 @@ class _FormWidgetState extends State<FormWidget> {
               style: kStyleInformacionFormulario.copyWith(color: kTextInput)),
           const SizedBox(height: 8),
           _uploadBox(),
+          const SizedBox(height: 14),
+          _label("Foto del carnet de vacunación de tu mascota"),
+          const SizedBox(height: 4),
+          Text("Puedes agregarlo después.",
+              style: kStyleInformacionFormulario.copyWith(color: kTextInput)),
+          const SizedBox(height: 8),
+          _uploadBoxCarnet(),
           const SizedBox(height: 20),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,17 +1008,26 @@ class _FormWidgetState extends State<FormWidget> {
   }
 
   Widget _dateField() {
+    final bool hasError = _fechaError != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _label("Fecha de nacimiento", required: true),
+        const SizedBox(height: 4),
+        Text(
+          "OttoKare está disponible para mascotas desde los 6 meses hasta los 10 años",
+          style: kStyleInformacionFormulario.copyWith(color: kAzulClaro),
+        ),
         const SizedBox(height: 6),
         GestureDetector(
           onTap: _selectDate,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              border: Border.all(color: kBorder),
+              border: Border.all(
+                color: hasError ? kRojo : kBorder,
+                width: hasError ? 1.5 : 1.0,
+              ),
               borderRadius: BorderRadius.circular(8),
               color: kBlanco,
             ),
@@ -993,16 +1036,19 @@ class _FormWidgetState extends State<FormWidget> {
               children: [
                 Text(
                   _fechaNac ?? "Selecciona la fecha de nacimiento",
-                  // Input: Montserrat Medium 17px
                   style: kStyleInput.copyWith(
                     color: _fechaNac != null ? kAzulPrincipal : kTextInput,
                   ),
                 ),
-                const Icon(Icons.calendar_today, size: 18, color: kTextInput),
+                const Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: kTextInput),
               ],
             ),
           ),
         ),
+        if (hasError) ...[
+          const SizedBox(height: 4),
+          Text(_fechaError!, style: kStyleWarning),
+        ],
       ],
     );
   }
@@ -1075,52 +1121,61 @@ class _FormWidgetState extends State<FormWidget> {
   }
 
   Widget _uploadBox() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      width: double.infinity,
-      padding: EdgeInsets.all(_hasImage ? 14 : 24),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        border: Border.all(color: kAzulPrincipal, width: 1.5),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: _hasImage ? _fileLoaded() : _fileEmpty(),
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      child: _hasImage ? _fileLoaded() : _fileEmpty(),
     );
   }
 
   Widget _fileEmpty() {
-    return Column(
-      key: const ValueKey("empty"),
-      children: [
-        Icon(Icons.upload_rounded, color: kAzulPrincipal, size: 28),
-        const SizedBox(height: 8),
-        Text(
-          "Arrastra y suelta tu archivo aquí, o da clic para seleccionar",
-          style: kStyleInformacionFormulario.copyWith(color: kTextInput),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _pickImage,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kAzulPrincipal,
-            foregroundColor: kBlanco,
+    return GestureDetector(
+      onTap: _pickImage,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: CustomPaint(
+          key: const ValueKey("empty"),
+          painter: _DashedBorderPainter(),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              color: kBlanco,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.upload_rounded, color: kAzulPrincipal, size: 28),
+                const SizedBox(height: 10),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: kStyleInformacionFormulario.copyWith(color: kTextInput),
+                    children: [
+                      const TextSpan(text: "Arrastra y suelta tu archivo aquí, o "),
+                      TextSpan(
+                        text: "clic aquí para seleccionar",
+                        style: kStyleInformacionFormulario.copyWith(
+                          color: kAzulClaro,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Formato PNG, JPEG. Máximo 200KB",
+                  style: kStyleInformacionFormulario.copyWith(color: kTextInput),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          // Input Buttons: Quicksand Bold 16px
-          child: Text("Subir imagen", style: kStyleInputButtons),
         ),
-        const SizedBox(height: 8),
-        Text(
-          "Formato PNG, JPEG. Máximo 200KB",
-          style: kStyleWarning.copyWith(color: kTextInput),
-        ),
-      ],
+      ),
     );
   }
+
 
   Widget _fileLoaded() {
     return Row(
@@ -1177,7 +1232,7 @@ class _FormWidgetState extends State<FormWidget> {
     );
   }
 
-  Widget _btnPrimary(String text, VoidCallback onTap) => ElevatedButton(
+  Widget _btnPrimary(String text, VoidCallback? onTap) => ElevatedButton(
     onPressed: onTap,
     style: ElevatedButton.styleFrom(
       backgroundColor: kAzulPrincipal,
@@ -1221,6 +1276,103 @@ class _FormWidgetState extends State<FormWidget> {
 
   void _removeImage() {
     setState(() { _imageBytes = null; _imageName = null; _hasImage = false; });
+  }
+
+  Widget _uploadBoxCarnet() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      child: _hasCarnet ? _carnetLoaded() : _carnetEmpty(),
+    );
+  }
+
+  Widget _carnetEmpty() {
+    return GestureDetector(
+      onTap: _pickCarnet,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: CustomPaint(
+          key: const ValueKey("carnet_empty"),
+          painter: _DashedBorderPainter(),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              color: kBlanco,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.upload_rounded, color: kAzulPrincipal, size: 28),
+                const SizedBox(height: 10),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: kStyleInformacionFormulario.copyWith(color: kTextInput),
+                    children: [
+                      const TextSpan(text: "Arrastra y suelta tu archivo aquí, o "),
+                      TextSpan(
+                        text: "clic aquí para seleccionar",
+                        style: kStyleInformacionFormulario.copyWith(
+                          color: kAzulClaro,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Formato PNG, JPEG. Máximo 200KB",
+                  style: kStyleInformacionFormulario.copyWith(color: kTextInput),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _carnetLoaded() {
+    return Row(
+      key: const ValueKey("carnet_loaded"),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: kTealLight,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.image, color: kAzulPrincipal),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            _carnetName ?? "carnet.png",
+            style: kStyleInformacionFormulario,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        GestureDetector(
+          onTap: _removeCarnet,
+          child: const Icon(Icons.close, size: 18),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickCarnet() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      if (file.size > 200 * 1024) { _showSnack("La imagen supera los 200KB"); return; }
+      setState(() { _carnetBytes = file.bytes; _carnetName = file.name; _hasCarnet = true; });
+    }
+  }
+
+  void _removeCarnet() {
+    setState(() { _carnetBytes = null; _carnetName = null; _hasCarnet = false; });
   }
 
   static const List<Map<String, String>> _beneficios = [
@@ -1393,4 +1545,53 @@ class _HoverToggleButtonState extends State<_HoverToggleButton> {
       ),
     );
   }
+
+
+}
+// ═══════════════════════════════════════════════════════════════════
+//  DASHED BORDER PAINTER
+// ═══════════════════════════════════════════════════════════════════
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+  final double radius;
+
+  const _DashedBorderPainter({
+    this.color = const Color(0xFFCDD8DC),
+    this.strokeWidth = 2.8,
+    this.dashWidth = 14,
+    this.dashSpace = 6,
+    this.radius = 10,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(radius),
+      ));
+
+    final PathMetrics pathMetrics = path.computeMetrics();
+    for (final PathMetric metric in pathMetrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dashWidth),
+          paint,
+        );
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
